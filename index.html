@@ -329,7 +329,10 @@ document.getElementById("submit").addEventListener("click", async function () {
     document.getElementById("fallback").hidden = true;
     return;
   } catch (e) {
-    st.className = "status warn"; st.textContent = "Не вдалося зберегти автоматично. Скористайтеся посиланням нижче.";
+    st.className = "status warn";
+    st.textContent = /activat/i.test(e && e.message || "")
+      ? "Форму ще не активовано: власнику треба натиснути «Activate Form» у листі від FormSubmit. Поки що скористайтеся посиланням нижче."
+      : "Не вдалося зберегти автоматично. Скористайтеся посиланням нижче.";
     document.getElementById("fallback").hidden = false;
   }
   btn.disabled = false; btn.textContent = "Зберегти";

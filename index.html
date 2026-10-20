@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Анкета SNAP-IV</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,600&display=swap">
+<style>
+/* Layout: one narrow column like a printed clinic form; each question is a row with a 4-step segmented answer; sending sits at the end. */
+:root {
+  --bg: #f4f6f8;
+  --paper: #ffffff;
+  --fg: #16212b;
+  --muted: #5b6b79;
+  --line: #d5dde4;
+  --accent: #0b5e7e;
+  --accent-fg: #ffffff;
+  --ok: #1d7a46;
+  --warn: #9a5b00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1419; --paper: #162029; --fg: #e6edf2; --muted: #93a4b2;
+    --line: #2a3945; --accent: #5ab8de; --accent-fg: #06222e;
+    --ok: #5cc98a; --warn: #e0a84a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 60px; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  padding-block: max(20px, env(safe-area-inset-top, 0px)) max(48px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; }
+.eyebrow { font-size: 12px; color: var(--muted); letter-spacing: .04em; margin: 0; }
+h1 { font-family: var(--font-display); font-size: 24px; line-height: 1.25; margin: 6px 0 8px; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 19px; margin: 0; text-wrap: balance; }
+.instr { color: var(--muted); margin: 0; }
+.fields { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
+@media (min-width: 560px) { .fields { grid-template-columns: 2fr 1fr 1fr; } }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+input[type="text"], input[type="date"] {
+  font: inherit; font-size: 16px; color: var(--fg); background: transparent;
+  border: 0; border-bottom: 1px solid var(--muted); padding: 6px 0; border-radius: 0; min-width: 0; width: 100%;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 8px 0; padding-top: max(8px, env(safe-area-inset-top, 0px)); }
+.bar-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.bar-row b { font-family: var(--font-mono); font-weight: 500; color: var(--fg); }
+.track { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+.group-title { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; margin: 8px 0 0; }
+.q { padding: 16px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.group-title + .q { border-top: 0; }
+.q.missing .qn { color: var(--warn); font-weight: 600; }
+.qtext { display: flex; gap: 10px; }
+.qn { font-family: var(--font-mono); font-size: 13px; color: var(--muted); min-width: 22px; padding-top: 3px; }
+.opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.opt { position: relative; min-width: 0; }
+.opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.opt span {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 60px; padding: 6px 4px; text-align: center;
+  border: 1px solid var(--line); border-radius: 6px; background: transparent;
+  font-size: 12px; line-height: 1.2; color: var(--muted);
+}
+.opt span em { font-style: normal; font-family: var(--font-mono); font-size: 17px; color: var(--fg); }
+.opt input:hover + span { border-color: var(--accent); }
+.opt input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.opt input:checked + span em { color: var(--accent-fg); }
+.opt input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.status { margin: 0; font-size: 15px; color: var(--muted); }
+.status.ok { color: var(--ok); }
+.status.warn { color: var(--warn); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button, a.btn {
+  font: inherit; font-size: 16px; padding: 12px 18px; border-radius: 6px; cursor: pointer; text-decoration: none;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); display: inline-flex; align-items: center;
+}
+button.ghost, a.btn.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+button:focus-visible, a.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.linkbox { font-family: var(--font-mono); font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; width: 100%; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="sheet">
+    <p class="eyebrow">SNAP-IV · Bewertungsskala ADHS für Eltern</p>
+    <h1>Анкета SNAP-IV для батьків</h1>
+    <p class="instr">Згадайте, якою була дитина (у шкільні роки). Для кожного твердження оберіть варіант, який найкраще її описує. Відповіді зберігаються на цьому пристрої, тож можна зробити перерву й повернутися.</p>
+    <div class="fields">
+      <label class="f" for="name">Ім'я та прізвище дитини<input type="text" id="name" autocomplete="off"></label>
+      <label class="f" for="dob">Дата народження<input type="date" id="dob"></label>
+      <label class="f" for="date">Дата заповнення<input type="date" id="date"></label>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="bar-row"><span>Заповнено</span><b id="count">0 / 26</b></div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+  </div>
+
+  <form class="sheet" id="form"></form>
+
+  <section class="sheet stack" id="send">
+    <h2>Надіслати відповіді</h2>
+    <p class="status" id="status">Дайте відповідь на всі 26 питань.</p>
+    <div class="actions"><button type="button" id="submit">Надіслати відповіді</button></div>
+
+    <div class="stack" id="fallback" hidden>
+      <p class="note">Якщо надіслати не вийшло, скопіюйте це посилання (у ньому вже всі ваші відповіді) і надішліть його синові в Telegram, WhatsApp, Viber чи листом.</p>
+      <input class="linkbox" type="text" id="result-link" readonly aria-label="Посилання з відповідями">
+      <div class="actions">
+        <button type="button" class="ghost" id="copy-link">Скопіювати посилання</button>
+        <a class="btn ghost" id="tg" href="#" target="_blank" rel="noopener">Telegram</a>
+        <a class="btn ghost" id="wa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="actions"><button type="button" class="ghost" id="reset">Почати спочатку</button></div>
+    <p class="status warn" id="reset-confirm" hidden>Стерти всі відповіді? <button type="button" class="ghost" id="reset-yes">Так, стерти</button> <button type="button" class="ghost" id="reset-no">Ні</button></p>
+  </section>
+</div>
+
+<script>
+/* Where the answers go: an email to the son, and the Claude page that turns them into the German PDF. */
+var MAIL_ENDPOINT = "https://formsubmit.co/ajax/alex.karinski@gmail.com";
+var RESULTS_URL = "https://claude.ai/artifact/A83s7b2c3ZLxjFmEGtMSRM";
+
+var OPTS_UA = ["Зовсім ні", "Лише трохи", "Досить сильно", "Дуже сильно"];
+var OPTS_DE = ["Gar nicht", "Nur ein wenig", "Ziemlich viel", "Sehr viel"];
+var Q_UA = [
+  "Часто не звертає уваги на деталі або робить помилки через неуважність у шкільних роботах чи завданнях.",
+  "Часто має труднощі з утриманням уваги під час виконання завдань або ігор.",
+  "Часто здається, що не слухає, коли до нього/неї звертаються безпосередньо.",
+  "Часто не виконує інструкцій і не доводить до кінця шкільні завдання, хатню роботу чи обов'язки.",
+  "Часто має труднощі з організацією завдань і діяльності.",
+  "Уникає або неохоче береться за завдання, що вимагають тривалого розумового напруження.",
+  "Часто губить речі, потрібні для діяльності (напр., іграшки, шкільні завдання, олівці чи книжки).",
+  "Часто відволікається на зовнішні подразники.",
+  "Часто забудькуватий/забудькувата в повсякденних справах.",
+  "Часто совається руками чи ногами або вертиться на місці.",
+  "Часто залишає своє місце в класі або в інших ситуаціях, де очікується, що він/вона сидітиме.",
+  "Часто бігає або лазить надмірно в ситуаціях, де це недоречно.",
+  "Часто має труднощі зі спокійною грою або дозвіллям.",
+  "Часто «в русі» або поводиться так, ніби його/її «приводить у дію мотор».",
+  "Часто говорить надмірно багато.",
+  "Часто випалює відповіді, не дочекавшись завершення запитань.",
+  "Часто має труднощі з очікуванням своєї черги.",
+  "Часто перебиває або заважає іншим (напр., втручається в розмови чи ігри).",
+  "Часто втрачає самовладання.",
+  "Часто сперечається з дорослими.",
+  "Часто опирається проханням або правилам дорослих чи відмовляється їх виконувати.",
+  "Часто навмисно робить те, що дратує інших людей.",
+  "Часто звинувачує інших у своїх помилках або неналежній поведінці.",
+  "Часто буває вразливим/вразливою або легко дратується через інших.",
+  "Часто буває злісним/злісною або мстивим/мстивою.",
+  "Часто буває сердитим/сердитою та злопам'ятним/злопам'ятною."
+];
+var Q_DE = [
+  "Achtet häufig nicht genau auf Details oder macht Flüchtigkeitsfehler bei Schularbeiten oder Aufgaben.",
+  "Hat oft Schwierigkeiten, die Aufmerksamkeit bei Aufgaben oder Spielaktivitäten aufrechtzuerhalten.",
+  "Scheint oft nicht zuzuhören, wenn man direkt mit ihm spricht.",
+  "Befolgt häufig Anweisungen nicht und erledigt Schularbeiten, Hausarbeiten oder Pflichten nicht.",
+  "Hat oft Schwierigkeiten, Aufgaben und Aktivitäten zu organisieren.",
+  "Vermeidet oder nimmt nur ungern Aufgaben in Angriff, die anhaltende geistige Anstrengung erfordern.",
+  "Verliert häufig Dinge, die für Aktivitäten notwendig sind (z. B. Spielzeug, Schulaufgaben, Bleistifte oder Bücher).",
+  "Wird oft durch äußere Reize abgelenkt.",
+  "Ist bei alltäglichen Aktivitäten oft vergesslich.",
+  "Fummelt häufig mit Händen oder Füßen herum oder windet sich auf dem Sitz.",
+  "Verlässt häufig seinen Platz im Klassenzimmer oder in anderen Situationen, in denen erwartet wird, dass er sitzen bleibt.",
+  "Läuft oft umher oder klettert übermäßig viel in Situationen, in denen es unangemessen ist.",
+  "Hat oft Schwierigkeiten, ruhig zu spielen oder Freizeitaktivitäten nachzugehen.",
+  "Ist oft „unterwegs“ oder verhält sich oft wie „von einem Motor angetrieben“.",
+  "Redet oft übermäßig.",
+  "Platzt häufig mit Antworten heraus, bevor die Fragen vollständig beantwortet wurden.",
+  "Hat oft Schwierigkeiten, darauf zu warten, dass er an die Reihe kommt.",
+  "Unterbricht oder stört andere oft (mischt sich z. B. in Gespräche/Spiele ein).",
+  "Verliert oft die Beherrschung.",
+  "Streitet oft mit Erwachsenen.",
+  "Widersetzt sich oft aktiv den Bitten oder Regeln von Erwachsenen oder lehnt sie ab.",
+  "Tut oft absichtlich Dinge, die andere Menschen verärgern.",
+  "Gibt anderen die Schuld für seine Fehler oder sein Fehlverhalten.",
+  "Ist oft empfindlich oder lässt sich leicht von anderen ärgern.",
+  "Ist oft boshaft oder rachsüchtig.",
+  "Ist oft wütend und nachtragend."
+];
+var GROUPS = [
+  { from: 0, to: 9, ua: "Неуважність", de: "Unaufmerksamkeit (Fragen 1–9)" },
+  { from: 9, to: 18, ua: "Гіперактивність та імпульсивність", de: "Hyperaktivität/Impulsivität (Fragen 10–18)" },
+  { from: 18, to: 26, ua: "Опозиційна поведінка", de: "Oppositionelles Verhalten (Fragen 19–26)" }
+];
+
+function deDate(iso) { if (!iso) return "—"; var p = iso.split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : iso; }
+function answered(st) { var n = 0; for (var i = 0; i < 26; i++) if (st.a[i] !== undefined) n++; return n; }
+
+/* Same format the Claude results page reads: "#r" + base64url(JSON). */
+function encode(st) {
+  var a = ""; for (var i = 0; i < 26; i++) a += st.a[i] === undefined ? "x" : st.a[i];
+  var bytes = new TextEncoder().encode(JSON.stringify({ a: a, n: st.name || "", b: st.dob || "", d: st.date || "" }));
+  var bin = ""; bytes.forEach(function (b) { bin += String.fromCharCode(b); });
+  return "r" + btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function buildText(st) {
+  var L = [
+    "SNAP-IV Bewertungsskala ADHS für Eltern (SNAP-IV)",
+    "Ausgefüllt von der Mutter", "",
+    "Vorname, Name: " + (st.name || "—"),
+    "Geburtsdatum: " + deDate(st.dob),
+    "Datum: " + deDate(st.date), "",
+    "Antwortskala: 0 = Gar nicht, 1 = Nur ein wenig, 2 = Ziemlich viel, 3 = Sehr viel", ""
+  ];
+  for (var i = 0; i < 26; i++) {
+    var v = st.a[i];
+    L.push((i + 1) + ". " + Q_DE[i] + " – " + (v === undefined ? "keine Angabe" : v + " (" + OPTS_DE[v] + ")"));
+  }
+  L.push("", "Summenwerte:");
+  GROUPS.forEach(function (g) {
+    var s = 0; for (var i = g.from; i < g.to; i++) if (st.a[i] !== undefined) s += st.a[i];
+    L.push("– " + g.de + ": " + s + " / " + (g.to - g.from) * 3);
+  });
+  return L.join("\n");
+}
+
+var KEY = "snapiv-mama-v1";
+var state = { a: {}, name: "", dob: "", date: "" };
+try { var s0 = JSON.parse(localStorage.getItem(KEY) || "null"); if (s0 && s0.a) state = s0; } catch (e) {}
+if (!state.date) state.date = new Date().toISOString().slice(0, 10);
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+var form = document.getElementById("form");
+form.addEventListener("submit", function (e) { e.preventDefault(); });
+var html = "";
+GROUPS.forEach(function (g) {
+  html += '<p class="group-title">' + g.ua + "</p>";
+  for (var i = g.from; i < g.to; i++) {
+    html += '<div class="q" id="q' + i + '" role="radiogroup" aria-labelledby="t' + i + '"><div class="qtext"><span class="qn">' + (i + 1) +
+      '</span><span id="t' + i + '">' + Q_UA[i] + '</span></div><div class="opts">';
+    for (var v = 0; v < 4; v++) {
+      html += '<label class="opt"><input type="radio" id="q' + i + 'v' + v + '" name="q' + i + '" value="' + v + '"><span><em>' + v + "</em>" + OPTS_UA[v] + "</span></label>";
+    }
+    html += "</div></div>";
+  }
+});
+form.innerHTML = html;
+
+var showMissing = false, sent = false;
+function link() { return RESULTS_URL + "#" + encode(state); }
+function sync() {
+  var n = answered(state);
+  for (var i = 0; i < 26; i++) {
+    var val = state.a[i];
+    var els = form.querySelectorAll('input[name="q' + i + '"]');
+    for (var k = 0; k < els.length; k++) els[k].checked = (val !== undefined && +els[k].value === val);
+    document.getElementById("q" + i).classList.toggle("missing", val === undefined && showMissing);
+  }
+  document.getElementById("count").textContent = n + " / 26";
+  document.getElementById("fill").style.width = (n / 26 * 100) + "%";
+  var url = link(), msg = "Відповіді на анкету SNAP-IV";
+  document.getElementById("result-link").value = url;
+  document.getElementById("tg").href = "https://t.me/share/url?url=" + encodeURIComponent(url) + "&text=" + encodeURIComponent(msg);
+  document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent(msg + ": " + url);
+  if (sent) return;
+  var st = document.getElementById("status");
+  if (n < 26) { st.className = "status"; st.textContent = "Залишилось питань: " + (26 - n) + ". Можна надіслати й так, але краще відповісти на всі."; }
+  else { st.className = "status ok"; st.textContent = "Усі 26 питань заповнено. Натисніть «Надіслати відповіді»."; }
+}
+
+form.addEventListener("change", function (e) {
+  var m = /^q(\d+)$/.exec(e.target.name || "");
+  if (!m) return;
+  state.a[+m[1]] = +e.target.value;
+  sent = false; save(); sync();
+});
+["name", "dob", "date"].forEach(function (id) {
+  var el = document.getElementById(id);
+  el.value = state[id] || "";
+  el.addEventListener("input", function () { state[id] = el.value; sent = false; save(); sync(); });
+});
+
+document.getElementById("submit").addEventListener("click", async function () {
+  var btn = this, st = document.getElementById("status");
+  if (answered(state) < 26) {
+    showMissing = true; sync();
+    if (!btn.dataset.warned) {
+      btn.dataset.warned = "1";
+      st.className = "status warn"; st.textContent = "Пропущені питання позначені номером жовтого кольору. Натисніть «Надіслати» ще раз, якщо все одно хочете надіслати.";
+      var first = document.querySelector(".q.missing"); if (first) first.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+  }
+  btn.disabled = true; btn.textContent = "Надсилаю…";
+  try {
+    var res = await fetch(MAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        _subject: "SNAP-IV: відповіді мами" + (state.name ? " (" + state.name + ")" : ""),
+        _template: "box",
+        _captcha: "false",
+        "Відкрити й завантажити PDF": link(),
+        "Заповнено питань": answered(state) + " / 26",
+        "Bericht (Deutsch)": buildText(state)
+      })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok || String(data.success) === "false") throw new Error(data.message || "send failed");
+    sent = true;
+    st.className = "status ok"; st.textContent = "Надіслано! Відповіді вже на пошті у сина. Дякуємо!";
+    btn.textContent = "Надіслано";
+    document.getElementById("fallback").hidden = true;
+    return;
+  } catch (e) {
+    st.className = "status warn"; st.textContent = "Не вдалося надіслати автоматично. Скористайтеся посиланням нижче.";
+    document.getElementById("fallback").hidden = false;
+  }
+  btn.disabled = false; btn.textContent = "Надіслати відповіді";
+});
+
+document.getElementById("copy-link").addEventListener("click", function () {
+  var btn = this, box = document.getElementById("result-link");
+  function done(m) { btn.textContent = m; setTimeout(function () { btn.textContent = "Скопіювати посилання"; }, 2000); }
+  function fallback() { box.focus(); box.select(); done("Виділено — скопіюйте"); }
+  try { navigator.clipboard.writeText(box.value).then(function () { done("Скопійовано"); }, fallback); }
+  catch (e) { fallback(); }
+});
+document.getElementById("reset").addEventListener("click", function () { document.getElementById("reset-confirm").hidden = false; });
+document.getElementById("reset-no").addEventListener("click", function () { document.getElementById("reset-confirm").hidden = true; });
+document.getElementById("reset-yes").addEventListener("click", function () {
+  state = { a: {}, name: "", dob: "", date: new Date().toISOString().slice(0, 10) };
+  ["name", "dob", "date"].forEach(function (id) { document.getElementById(id).value = state[id]; });
+  document.getElementById("reset-confirm").hidden = true;
+  showMissing = false; sent = false; save(); sync();
+});
+sync();
+</script>
+</body>
+</html>

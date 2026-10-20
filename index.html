@@ -121,12 +121,12 @@ button:focus-visible, a.btn:focus-visible { outline: 2px solid var(--accent); ou
   <form class="sheet" id="form"></form>
 
   <section class="sheet stack" id="send">
-    <h2>Надіслати відповіді</h2>
+    <h2>Зберегти відповіді</h2>
     <p class="status" id="status">Дайте відповідь на всі 26 питань.</p>
-    <div class="actions"><button type="button" id="submit">Надіслати відповіді</button></div>
+    <div class="actions"><button type="button" id="submit">Зберегти</button></div>
 
     <div class="stack" id="fallback" hidden>
-      <p class="note">Якщо надіслати не вийшло, скопіюйте це посилання (у ньому вже всі ваші відповіді) і надішліть його синові в Telegram, WhatsApp, Viber чи листом.</p>
+      <p class="note">Якщо зберегти не вийшло, скопіюйте це посилання (у ньому вже всі ваші відповіді) і надішліть його синові в Telegram, WhatsApp, Viber чи листом.</p>
       <input class="linkbox" type="text" id="result-link" readonly aria-label="Посилання з відповідями">
       <div class="actions">
         <button type="button" class="ghost" id="copy-link">Скопіювати посилання</button>
@@ -281,7 +281,7 @@ function sync() {
   if (sent) return;
   var st = document.getElementById("status");
   if (n < 26) { st.className = "status"; st.textContent = "Залишилось питань: " + (26 - n) + ". Можна надіслати й так, але краще відповісти на всі."; }
-  else { st.className = "status ok"; st.textContent = "Усі 26 питань заповнено. Натисніть «Надіслати відповіді»."; }
+  else { st.className = "status ok"; st.textContent = "Усі 26 питань заповнено. Натисніть «Зберегти»."; }
 }
 
 form.addEventListener("change", function (e) {
@@ -302,18 +302,18 @@ document.getElementById("submit").addEventListener("click", async function () {
     showMissing = true; sync();
     if (!btn.dataset.warned) {
       btn.dataset.warned = "1";
-      st.className = "status warn"; st.textContent = "Пропущені питання позначені номером жовтого кольору. Натисніть «Надіслати» ще раз, якщо все одно хочете надіслати.";
+      st.className = "status warn"; st.textContent = "Пропущені питання позначені номером жовтого кольору. Натисніть «Зберегти» ще раз, якщо все одно хочете зберегти.";
       var first = document.querySelector(".q.missing"); if (first) first.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
   }
-  btn.disabled = true; btn.textContent = "Надсилаю…";
+  btn.disabled = true; btn.textContent = "Зберігаю…";
   try {
     var res = await fetch(MAIL_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({
-        _subject: "SNAP-IV: відповіді мами" + (state.name ? " (" + state.name + ")" : ""),
+        _subject: "✅ Мама заповнила анкету SNAP-IV" + (state.name ? " (" + state.name + ")" : ""),
         _template: "box",
         _captcha: "false",
         "Відкрити й завантажити PDF": link(),
@@ -324,15 +324,15 @@ document.getElementById("submit").addEventListener("click", async function () {
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok || String(data.success) === "false") throw new Error(data.message || "send failed");
     sent = true;
-    st.className = "status ok"; st.textContent = "Надіслано! Відповіді вже на пошті у сина. Дякуємо!";
-    btn.textContent = "Надіслано";
+    st.className = "status ok"; st.textContent = "Збережено! Син уже отримав повідомлення, що анкету заповнено. Дякуємо!";
+    btn.textContent = "Збережено";
     document.getElementById("fallback").hidden = true;
     return;
   } catch (e) {
-    st.className = "status warn"; st.textContent = "Не вдалося надіслати автоматично. Скористайтеся посиланням нижче.";
+    st.className = "status warn"; st.textContent = "Не вдалося зберегти автоматично. Скористайтеся посиланням нижче.";
     document.getElementById("fallback").hidden = false;
   }
-  btn.disabled = false; btn.textContent = "Надіслати відповіді";
+  btn.disabled = false; btn.textContent = "Зберегти";
 });
 
 document.getElementById("copy-link").addEventListener("click", function () {

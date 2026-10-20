@@ -143,6 +143,7 @@ button:focus-visible, a.btn:focus-visible { outline: 2px solid var(--accent); ou
 <script>
 /* Where the answers go: an email to the son, and the Claude page that turns them into the German PDF. */
 var MAIL_ENDPOINT = "https://formsubmit.co/ajax/alex.karinski@gmail.com";
+var PUSH_ENDPOINT = "https://ntfy.sh/snapiv-5046b0fcd218ecc31c";
 var RESULTS_URL = "https://claude.ai/artifact/A83s7b2c3ZLxjFmEGtMSRM";
 
 var OPTS_UA = ["Зовсім ні", "Лише трохи", "Досить сильно", "Дуже сильно"];
@@ -308,7 +309,31 @@ document.getElementById("submit").addEventListener("click", async function () {
     }
   }
   btn.disabled = true; btn.textContent = "Зберігаю…";
-  try {
+  var title = "Мама заповнила анкету SNAP-IV" + (state.name ? " (" + state.name + ")" : "");
+  /* Push notification to the son's phone (ntfy app); the tap opens the report with the PDFs. */
+  var pushed = fetch(PUSH_ENDPOINT + "?title=" + encodeURIComponent(title) + "&tags=white_check_mark&click=" + encodeURIComponent(link()), {
+    method: "POST",
+    body: "Заповнено питань: " + answered(state) + " / 26. Натисніть, щоб відкрити відповіді й PDF.\n" + link()
+  }).then(function (r) { return r.ok; }, function () { return false; });
+  var mailed = sendMail().then(function () { return true; }, function (e) { return e; });
+  var okPush = await pushed, okMail = await mailed;
+  if (okPush || okMail === true) {
+    sent = true;
+    st.className = "status ok"; st.textContent = "Збережено! Син уже отримав повідомлення, що анкету заповнено. Дякуємо!";
+    btn.textContent = "Збережено";
+    document.getElementById("fallback").hidden = true;
+    return;
+  }
+  st.className = "status warn";
+  st.textContent = /activat/i.test(okMail && okMail.message || "")
+    ? "Форму ще не активовано: власнику треба натиснути «Activate Form» у листі від FormSubmit. Поки що скористайтеся посиланням нижче."
+    : "Не вдалося зберегти автоматично. Скористайтеся посиланням нижче.";
+  document.getElementById("fallback").hidden = false;
+  btn.disabled = false; btn.textContent = "Зберегти";
+});
+
+/* Email copy via FormSubmit; works once the owner has clicked "Activate Form". */
+async function sendMail() {
     var res = await fetch(MAIL_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
@@ -323,20 +348,7 @@ document.getElementById("submit").addEventListener("click", async function () {
     });
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok || String(data.success) === "false") throw new Error(data.message || "send failed");
-    sent = true;
-    st.className = "status ok"; st.textContent = "Збережено! Син уже отримав повідомлення, що анкету заповнено. Дякуємо!";
-    btn.textContent = "Збережено";
-    document.getElementById("fallback").hidden = true;
-    return;
-  } catch (e) {
-    st.className = "status warn";
-    st.textContent = /activat/i.test(e && e.message || "")
-      ? "Форму ще не активовано: власнику треба натиснути «Activate Form» у листі від FormSubmit. Поки що скористайтеся посиланням нижче."
-      : "Не вдалося зберегти автоматично. Скористайтеся посиланням нижче.";
-    document.getElementById("fallback").hidden = false;
-  }
-  btn.disabled = false; btn.textContent = "Зберегти";
-});
+}
 
 document.getElementById("copy-link").addEventListener("click", function () {
   var btn = this, box = document.getElementById("result-link");

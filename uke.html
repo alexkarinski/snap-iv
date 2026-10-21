@@ -808,7 +808,9 @@ function sums(t) {
   });
 }
 function bodyText(t) {
-  var l = [t.title];
+  var l = [t.title, t.instr];
+  if (!t.yn) l.push("Antwortskala: " + t.opts.map(function (o) { return o.v + " = " + (o.f || o.t); }).join(", ") + ", * = unentschieden");
+  l.push("");
   t.items.forEach(function (_, i) {
     var v = S.a[t.id][i];
     l.push((i + 1) + ": " + (v === undefined ? "—" : v < 0 ? "* (unentschieden)" : (t.yn ? t.opts[v].t : v + " (" + optLabel(t, v) + ")")));
@@ -846,6 +848,9 @@ function makePdf(list) {
   list.forEach(function (t, ti) {
     if (ti > 0) { doc.addPage(); y = M; } else { y += 4; }
     line(t.title, 14, true); y += 1;
+    line(t.instr, 9, false); y += 1;
+    if (!t.yn) line("Antwortskala: " + t.opts.map(function (o) { return o.v + " = " + (o.f || o.t); }).join(", ") + ", * = unentschieden", 9, false);
+    y += 1;
     if (t.extra) { line("Alter: " + (S.meta.age || "-") + "    Geschlecht: " + (S.meta.sex || "-"), 10, false); }
     y += 2;
     t.items.forEach(function (txt, i) {

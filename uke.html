@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Fragebögen UKE</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=Literata:opsz,wght@7..72,600&display=swap">
+<style>
+/* Layout: one narrow column like the printed clinic forms; tabs switch between the four tests, each question is a row with a segmented answer. */
+:root {
+  --bg: #f4f6f8;
+  --paper: #ffffff;
+  --fg: #16212b;
+  --muted: #5b6b79;
+  --line: #d5dde4;
+  --accent: #0b5e7e;
+  --accent-fg: #ffffff;
+  --warn-bg: #fdf0d9;
+  --warn-fg: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1419; --paper: #162029; --fg: #e6edf2; --muted: #93a4b2;
+    --line: #2a3945; --accent: #5ab8de; --accent-fg: #06222e;
+    --warn-bg: #3a2d10; --warn-fg: #f3d9a4;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1419; --paper: #162029; --fg: #e6edf2; --muted: #93a4b2;
+  --line: #2a3945; --accent: #5ab8de; --accent-fg: #06222e;
+  --warn-bg: #3a2d10; --warn-fg: #f3d9a4;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; min-width: 0; }
+.org { font-size: 12px; color: var(--muted); }
+.org strong { color: var(--fg); font-weight: 600; }
+h1 { font-family: var(--font-display); font-size: 22px; line-height: 1.25; margin: 10px 0 6px; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 18px; line-height: 1.3; margin: 0 0 8px; text-wrap: balance; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.fields { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 16px; }
+@media (min-width: 560px) { .fields { grid-template-columns: 2fr 1fr 1fr; } .fields.two { grid-template-columns: 1fr 1fr; } }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+input[type="text"], input[type="date"], input[type="number"], select {
+  font: inherit; font-size: 15px; color: var(--fg); background: transparent;
+  border: 0; border-bottom: 1px solid var(--muted); padding: 6px 0; border-radius: 0; min-width: 0; width: 100%;
+}
+select option { background: var(--paper); color: var(--fg); }
+input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.lang { display: inline-flex; margin-top: 14px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.langbtn { font: inherit; font-size: 13px; padding: 8px 16px; border: 0; background: transparent; color: var(--fg); cursor: pointer; }
+.langbtn + .langbtn { border-left: 1px solid var(--line); }
+.langbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.langbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tabbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding: 8px 0; }
+.tabs { display: flex; gap: 6px; overflow-x: auto; }
+.tab {
+  flex: 1 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 8px 12px; border: 1px solid var(--line); background: var(--paper); color: var(--fg);
+  border-radius: 6px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; text-align: left;
+}
+.tab small { font-family: var(--font-mono); font-weight: 500; font-size: 11px; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.tab[aria-selected="true"] small { color: var(--accent-fg); }
+.tab.done:not([aria-selected="true"]) small { color: var(--accent); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.hint { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.legend { margin-top: 10px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.sec { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; margin: 18px 0 0; }
+.q { padding: 14px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.sec.plain { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; color: var(--fg); }
+.sec + .q, .qs > .q:first-child { border-top: 0; }
+.qtext { display: flex; gap: 10px; min-width: 0; }
+.qn { font-family: var(--font-mono); font-size: 13px; color: var(--muted); min-width: 24px; padding-top: 2px; }
+.opts { display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 6px; }
+@media (max-width: 520px) { .opts.long { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 600px) {
+  .q.inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+  .q.inline .ans { width: 180px; flex: none; }
+}
+.opt { position: relative; min-width: 0; display: block; }
+.opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.opt span {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  height: 100%; min-height: 56px; padding: 6px 4px; text-align: center;
+  border: 1px solid var(--line); border-radius: 6px;
+  font-size: 11px; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere;
+}
+.opts.yn .opt span { min-height: 40px; font-size: 13px; color: var(--fg); }
+.opt span em { font-style: normal; font-family: var(--font-mono); font-size: 16px; color: var(--fg); }
+.opt input:hover + span { border-color: var(--accent); }
+.opt input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.opt input:checked + span em { color: var(--accent-fg); }
+.opt input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.ans { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.star { position: relative; align-self: flex-start; display: inline-block; }
+.star input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.star span { display: block; min-width: 44px; padding: 3px 10px 0; border: 1px dashed var(--muted); border-radius: 6px; font-family: var(--font-mono); font-size: 18px; line-height: 1.4; text-align: center; color: var(--muted); }
+.star input:hover + span { border-color: var(--accent); color: var(--fg); }
+.star input:checked + span { background: var(--accent); border-color: var(--accent); border-style: solid; color: var(--accent-fg); }
+.star input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rows { display: flex; flex-direction: column; }
+.rrow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.rrow:first-child { border-top: 0; }
+.rrow small { color: var(--muted); display: block; }
+.score { font-family: var(--font-mono); font-size: 18px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.score small { display: inline; font-size: 12px; }
+.note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+.flag { margin-top: 12px; padding: 10px 12px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-fg); font-size: 13px; }
+textarea {
+  width: 100%; margin-top: 4px; font-family: var(--font-mono); font-size: 12px; line-height: 1.5;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; resize: vertical;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+button.btn { font: inherit; font-size: 14px; padding: 10px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); }
+button.btn.ghost { background: transparent; color: var(--accent); }
+button.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="sheet">
+    <div class="org"><strong>UKE Hamburg</strong> · Spezialambulanz für AD(H)S im Erwachsenenalter · Martinistraße 52, 20246 Hamburg</div>
+    <h1>Fragebögen UKE</h1>
+    <p class="muted">ASRS-v1.1, ADHS-SB, WURS-k, PHQ-9 и SKID-II из клиники. Ответы и место, где вы остановились, сохраняются в этом браузере автоматически.</p>
+    <div class="lang" role="group" aria-label="Язык вопросов">
+      <button type="button" class="langbtn" data-l="de" aria-pressed="true">Deutsch</button>
+      <button type="button" class="langbtn" data-l="ru" aria-pressed="false">Русский</button>
+    </div>
+    <p class="note" style="margin-top:8px">Текст для врача всегда выгружается на немецком, независимо от выбранного языка. Кнопка «*» у каждого вопроса значит «не определился(лась)», такой ответ не входит в сумму баллов.</p>
+    <div class="fields">
+      <label class="f" for="name">Vorname, Name<input type="text" id="name" autocomplete="off"></label>
+      <label class="f" for="dob">Geburtsdatum<input type="date" id="dob"></label>
+      <label class="f" for="date">Datum<input type="date" id="date"></label>
+    </div>
+  </div>
+
+  <div class="tabbar"><div class="tabs" id="tabs" role="tablist"></div></div>
+
+  <div class="sheet" id="panel" role="tabpanel"></div>
+
+  <div class="sheet" id="result"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var TESTS = [
+  {
+    id: "asrs", tab: "ASRS-v1.1",
+    title: "Symptomcheckliste für Erwachsene mit ADHS (ASRS-v1.1)",
+    instr: "Kreuzen Sie als Antwort auf jede Frage das Kästchen an, das am besten beschreibt, wie Sie sich in den letzten 6 Monaten gefühlt und verhalten haben.",
+    hint: "Период: последние 6 месяцев.",
+    opts: [{v:0,t:"Nie"},{v:1,t:"Selten"},{v:2,t:"Manchmal"},{v:3,t:"Oft"},{v:4,t:"Sehr oft"}],
+    sections: [{at:0,t:"Teil A - Screener"},{at:6,t:"Teil B - Symptomcheckliste"}],
+    groups: [{from:0,to:6,name:"Teil A (1–6)",max:24},{from:6,to:18,name:"Teil B (7–18)",max:48}],
+    items: [
+      "Wie oft haben Sie Probleme, die letzten Details eines Projekts abzuschließen, nachdem die schwierigen Teile abgeschlossen sind?",
+      "Wie oft haben Sie Schwierigkeiten, Dinge zu ordnen, wenn Sie eine Aufgabe haben, die Organisation erfordert?",
+      "Wie oft haben Sie Probleme, sich an Termine oder Verpflichtungen zu erinnern?",
+      "Wie oft vermeiden oder verschieben Sie es, eine Aufgabe zu beginnen, die viel Nachdenken erfordert?",
+      "Wie oft sind Sie zappelig oder bewegen Sie die Hände oder Füße, wenn Sie lange Zeit sitzen müssen?",
+      "Wie oft fühlen Sie sich übermäßig aktiv und unter dem Zwang, Dinge zu tun, als ob Sie von einem Motor angetrieben wären?",
+      "Wie oft machen Sie Flüchtigkeitsfehler, wenn Sie an einem langweiligen oder schwierigen Projekt arbeiten müssen?",
+      "Wie oft haben Sie Schwierigkeiten, aufmerksam zu bleiben, wenn Sie langweilige oder sich wiederholende Arbeiten verrichten?",
+      "Wie oft haben Sie Schwierigkeiten, sich auf das, was man Ihnen sagt, zu konzentrieren, selbst wenn man Sie direkt anspricht?",
+      "Wie oft verlegen Sie Dinge zuhause oder bei der Arbeit bzw. haben Schwierigkeiten, sie zu finden?",
+      "Wie oft lassen Sie sich durch Aktivitäten oder Geräusche in Ihrer Umgebung ablenken?",
+      "Wie oft verlassen Sie Ihren Platz bei Besprechungen oder in anderen Situationen, wo von Ihnen erwartet wird, dass Sie sitzen bleiben?",
+      "Wie oft sind Sie unruhig oder zappelig?",
+      "Wie oft haben Sie Schwierigkeiten, abzuschalten und sich zu entspannen, wenn Sie Zeit für sich haben?",
+      "Wie oft passiert es Ihnen, dass Sie in geselligen Situationen zu viel reden?",
+      "Wie oft kommt es in einer Unterhaltung vor, dass Sie die Sätze Ihrer Gesprächspartner beenden, bevor diese sie selbst beenden können?",
+      "Wie oft haben Sie Schwierigkeiten zu warten, bis Sie an der Reihe sind?",
+      "Wie häufig unterbrechen Sie andere Leute, wenn diese arbeiten oder mit anderen Dingen beschäftigt sind?"
+    ]
+  },
+  {
+    id: "adhs", tab: "ADHS-SB",
+    title: "ADHS Selbstbeurteilungsskala (ADHS-SB)",
+    instr: "Nachfolgend finden Sie einige Fragen über Konzentrationsvermögen, Bewegungsbedürfnis und Nervosität. Gemeint ist damit Ihre Situation, wie sie sich gewöhnlich darstellt. Wenn die Formulierungen auf Sie nicht zutreffen, kreuzen Sie bitte „nicht zutreffend“ an. Wenn Sie der Meinung sind, dass die Aussagen richtig sind, geben Sie bitte an, welche Ausprägung – leicht/mittel/schwer – Ihre Situation am besten beschreibt. Bitte kreuzen Sie die entsprechende Antwortalternative an. Lassen Sie bitte keinen Punkt aus.",
+    hint: "Если утверждение к вам не подходит, отметьте 0. Не пропускайте пункты.",
+    opts: [
+      {v:0,t:"Trifft nicht zu",f:"Trifft nicht zu"},
+      {v:1,t:"Leicht",f:"Leicht ausgeprägt (kommt gelegentlich vor)"},
+      {v:2,t:"Mittel",f:"Mittel ausgeprägt (kommt oft vor)"},
+      {v:3,t:"Schwer",f:"Schwer ausgeprägt (kommt nahezu immer vor)"}
+    ],
+    legend: ["Leicht ausgeprägt (kommt gelegentlich vor)","Mittel ausgeprägt (kommt oft vor)","Schwer ausgeprägt (kommt nahezu immer vor)"],
+    sections: [],
+    groups: [{from:0,to:9,name:"Fragen 1–9",max:27},{from:9,to:18,name:"Fragen 10–18",max:27},{from:18,to:22,name:"Fragen 19–22",max:12}],
+    items: [
+      "Ich bin unaufmerksam gegenüber Details oder mache Sorgfaltsfehler bei der Arbeit.",
+      "Bei der Arbeit oder sonstigen Aktivitäten (z. B. Lesen, Fernsehen, Spiel) fällt es mir schwer, konzentriert durchzuhalten.",
+      "Ich höre nicht richtig zu, wenn jemand etwas zu mir sagt.",
+      "Es fällt mir schwer, Aufgaben am Arbeitsplatz wie sie mir erklärt wurden, zu erfüllen.",
+      "Es fällt mir schwer, Projekte, Vorhaben oder Aktivitäten zu organisieren.",
+      "Ich gehe Aufgaben, die geistige Anstrengung erforderlich machen, am liebsten aus dem Weg. Ich mag solche Arbeiten nicht oder sträube mich innerlich dagegen.",
+      "Ich verlege wichtige Gegenstände (z. B. Schlüssel, Portemonnaie, Werkzeuge).",
+      "Ich lasse mich bei Tätigkeiten leicht ablenken.",
+      "Ich vergesse Verabredungen, Termine oder telefonische Rückrufe.",
+      "Ich bin zappelig.",
+      "Es fällt mir schwer, längere Zeit sitzen",
+      "Ich fühle mich unruhig.",
+      "Ich kann mich schlecht leise beschäftigen. Wenn ich etwas mache, geht es laut zu.",
+      "Ich bin ständig auf Achse und fühle mich wie von einem Motor angetrieben.",
+      "Mir fällt es schwer abzuwarten, bis andere ausgesprochen haben. Ich falle anderen ins Wort.",
+      "Ich bin ungeduldig und kann nicht warten, bis ich an der Reihe bin (z. B. beim Einkaufen).",
+      "Ich unterbreche und störe andere, wenn sie etwas tun.",
+      "Ich rede viel, auch wenn mir keiner zuhören will.",
+      "Diese Schwierigkeiten hatte ich schon im Schulalter.",
+      "Diese Schwierigkeiten habe ich immer wieder, nicht nur bei der Arbeit, sondern auch in anderen Lebenssituationen, z. B. Familie, Freunde und Freizeit.",
+      "Ich leide unter diesen Schwierigkeiten.",
+      "Ich habe wegen dieser Schwierigkeiten schon Probleme im Beruf und auch im Kontakt mit anderen Menschen gehabt."
+    ]
+  },
+  {
+    id: "wurs", tab: "WURS-k",
+    title: "Wender-Utah-Rating Skala – Kurzversion (WURS-k)",
+    instr: "Dieser Test ermöglicht es, den Schweregrad der ADHS-Symptomatik in der Kindheit eines Erwachsenen einzuschätzen. Da ADHS immer in der Kindheit beginnt, ist zur diagnostischen Abklärung die retrospektive Erfassung von Krankheitssymptomen zwingend erforderlich. Im Folgenden finden Sie eine Reihe von Aussagen über bestimmte Verhaltensweisen, Eigenschaften und Schwierigkeiten. Bitte lesen Sie diese der Reihe nach durch und entscheiden Sie jeweils, ob und wie stark diese Verhaltensweise, diese Eigenschaft oder dieses Problem bei Ihnen als Kind im Alter von ca. 8 bis 10 Jahren ausgeprägt war. Dabei stehen Ihnen 5 verschiedene Antwortalternativen zur Verfügung. Bitte kreuzen Sie die entsprechende Antwortalternative an. Lassen Sie bitte keinen Punkt aus und wählen Sie im Zweifelsfall die Antwortmöglichkeit, die noch am ehesten für Sie zutrifft.",
+    hint: "Период: детство, примерно 8–10 лет. Не пропускайте пункты.",
+    opts: [
+      {v:0,t:"Trifft nicht zu",f:"Trifft nicht zu"},
+      {v:1,t:"Gering",f:"Gering ausgeprägt"},
+      {v:2,t:"Mäßig",f:"Mäßig ausgeprägt"},
+      {v:3,t:"Deutlich",f:"Deutlich ausgeprägt"},
+      {v:4,t:"Stark",f:"Stark ausgeprägt"}
+    ],
+    sections: [],
+    groups: [{from:0,to:25,name:"Rohsumme (1–25)",max:100}],
+    items: [
+      "hatte ich Konzentrationsprobleme bzw. war leicht ablenkbar.",
+      "war ich zappelig und nervös.",
+      "war ich unaufmerksam und verträumt.",
+      "war ich gut organisiert, sauber und ordentlich.",
+      "hatte ich Wutanfälle und Gefühlsausbrüche.",
+      "hatte ich ein geringes Durchhaltevermögen, brach ich Tätigkeiten vor deren Beendigung ab.",
+      "war ich traurig, unglücklich und depressiv.",
+      "war ich ungehorsam, rebellisch und aufsässig.",
+      "hatte ich ein geringes Selbstwertgefühl bzw. eine niedrige Selbsteinschätzung.",
+      "war ich leicht zu irritieren.",
+      "hatte ich starke Stimmungsschwankungen und war launisch.",
+      "war ich ein guter Schüler bzw. eine gute Schülerin.",
+      "war ich oft ärgerlich oder verärgert.",
+      "verfügte ich über eine gute motorische Koordinationsfähigkeit und wurde immer zuerst als Mitspieler ausgesucht.",
+      "hatte ich eine Tendenz zur Unreife.",
+      "verlor ich oft die Selbstkontrolle.",
+      "hatte ich die Tendenz, unvernünftig zu sein oder unvernünftig zu handeln.",
+      "hatte ich Probleme mit anderen Kindern und keine langen Freundschaften.",
+      "hatte ich Angst, die Selbstbeherrschung zu verlieren.",
+      "bin ich von zuhause fortgelaufen.",
+      "war ich in Raufereien verwickelt.",
+      "hatte ich Schwierigkeiten mit Autoritäten, z.B. ärger in der Schule oder Vorladungen beim Direktor.",
+      "hatte ich ärger mit der Polizei.",
+      "war ich insgesamt ein schlechter Schüler/eine schlechte Schülerin und lernte langsam.",
+      "hatte ich Freunde und war beliebt."
+    ].map(function (s) { return "Als Kind im Alter von 8-10 Jahren " + s; })
+  },
+  {
+    id: "phq", tab: "PHQ-9",
+    title: "PHQ-9",
+    instr: "Wie oft fühlten Sie sich im Verlauf der letzten 2 Wochen durch die folgenden Beschwerden beeinträchtigt?",
+    hint: "Период: последние 2 недели.",
+    long: true,
+    opts: [
+      {v:0,t:"Überhaupt nicht"},
+      {v:1,t:"An einzelnen Tagen"},
+      {v:2,t:"An mehr als der Hälfte der Tage"},
+      {v:3,t:"Beinahe jeden Tag"}
+    ],
+    sections: [],
+    groups: [{from:0,to:9,name:"Summe (1–9)",max:27}],
+    flag: {i:8, text:"Вы отметили вопрос 9. Покажите это врачу, это важная часть опросника. Если сейчас тяжело, позвоните в Telefonseelsorge: 0800 111 0 111 (бесплатно, круглосуточно). При угрозе жизни звоните 112."},
+    items: [
+      "wenig Interesse oder Freude an Ihren Tätigkeiten",
+      "Niedergeschlagenheit, Schwermut oder Hoffnungslosigkeit",
+      "Schwierigkeiten ein- oder durchzuschlafen oder vermehrter Schlaf",
+      "Müdigkeit oder Gefühl, keine Energie zu haben",
+      "verminderter Appetit oder übermäßiges Bedürfnis zu essen",
+      "schlechte Meinung von sich selbst, Gefühl, ein Versager zu sein oder die Familie enttäuscht zu haben",
+      "Schwierigkeiten, sich auf etwas zu konzentrieren, z.B. beim Zeitunglesen oder Fernsehen",
+      "Waren Ihre Bewegungen oder Ihre Sprache so verlangsamt, dass es auch anderen auffallen würde? Oder waren Sie im Gegenteil „zappelig“ oder ruhelos und hatten dadurch einen stärkeren Bewegungsdrang als sonst?",
+      "Gedanken, dass Sie lieber tot wären oder sich Leid zufügen möchten"
+    ]
+  },
+  {
+    id: "skid", tab: "SKID-II",
+    title: "SKID-II – Fragebogen",
+    instr: "Die folgenden Fragen beziehen sich auf Ihre Persönlichkeit, also auf Ihre Empfindungen, Gefühle, Einstellungen und Verhaltensweisen in Ihrem bisherigen Leben. Bitte versuchen Sie, sich so zu beschreiben, wie Sie im allgemeinen sind. Beziehen Sie sich dabei auf die letzten fünf bis zehn Jahre. Kreuzen Sie bitte das Zutreffende an. Wenn Sie eine Frage nicht verstehen, lassen Sie diese bitte aus.",
+    hint: "Отвечайте, как вы обычно себя ведёте, ориентируясь на последние 5–10 лет. Если вопрос непонятен, пропустите его.",
+    yn: true,
+    extra: true,
+    opts: [{v:0,t:"Nein"},{v:1,t:"Ja"}],
+    sections: [
+      {at:102,t:"Die folgenden Fragen beziehen sich auf Verhaltensweisen, die vor Ihrem 15. Lebensjahr aufgetreten sein könnten.",plain:true},
+      {at:102,t:"Vor Ihrem 15. Lebensjahr..."},
+      {at:115,t:"Vor Ihrem 13. Lebensjahr..."}
+    ],
+    groups: [{from:0,to:117,name:"Antworten „Ja“",max:117}],
+    items: [
+      "Vermeiden Sie berufliche Aufgaben oder Aufträge, bei denen Sie mit vielen Menschen zu tun haben?",
+      "Meiden Sie Kontakt mit anderen Menschen, es sei denn, Sie sind sicher, daß diese Sie wirklich mögen?",
+      "Fällt es Ihnen schwer, anderen Menschen gegenüber offen zu sein, selbst wenn diese Ihnen nahe stehen?",
+      "Wenn Sie mit anderen Menschen zu tun haben, befürchten Sie dann oft, von ihnen kritisiert oder abgelehnt zu werden?",
+      "Sind sie gewöhnlich zurückhaltend und schweigsam, wenn Sie neue Leute kennenlernen?",
+      "Glauben Sie, daß Sie nicht so klug, so geschickt oder so attraktiv sind wie die meisten anderen Menschen?",
+      "Haben Sie Angst davor, neue Dinge auszuprobieren?",
+      "Benötigen Sie häufig Ratschläge oder Bestätigung von anderen, bevor Sie alltägliche Entscheidungen treffen können, also z.B. was Sie anziehen oder in einem Restaurant bestellen sollen?",
+      "Sind Sie bei der Organisation wichtiger Lebensbereiche, wie z.B. finanziellen Angelegenheiten, Kindererziehung oder der Planung des Alltags, von anderen Personen abhängig?",
+      "Fällt es Ihnen schwer, anderen zu widersprechen, selbst wenn Sie denken, daß diese im Unrecht sind?",
+      "Fällt es Ihnen schwer, Aufgaben zu beginnen oder daran zu arbeiten, wenn Ihnen niemand dabei hilft?",
+      "Übernehmen Sie oft freiwillig unerfreuliche Aufgaben?",
+      "Fühlen Sie sich im allgemeinen unwohl, wenn Sie allein sind?",
+      "Wenn eine enge Beziehung endet, brauchen Sie dann schnell einen anderen Menschen, auf den Sie sich verlassen können?",
+      "Denken Sie oft darüber nach, allein gelassen zu werden und niemanden zu haben, der sich um Sie kümmert?",
+      "Sind Sie jemand, der viel Wert auf Details, Ordnung und Organisation legt, oder machen Sie gerne Listen und Zeitpläne?",
+      "Haben Sie Schwierigkeiten, Arbeiten zu Ende zu bringen, weil Sie viel Zeit darauf verwenden, alles genau und richtig zu machen?",
+      "Glauben Sie selbst oder haben andere Ihnen schon gesagt, daß Sie mit Ihrer Arbeit (mit der Schule) oft so beschäftigt sind, daß keine Zeit mehr für Freunde oder Vergnügungen bleibt?",
+      "Haben Sie sehr hohe moralische Ansprüche?",
+      "Fällt es Ihnen schwer, Dinge wegzuwerfen, weil Sie denken, sie vielleicht irgendwann wieder gebrauchen zu können?",
+      "Fällt es Ihnen schwer, sich von anderen helfen zu lassen, wenn diese die Angelegenheit nicht genau nach Ihren Vorstellungen erledigen?",
+      "Fällt es Ihnen schwer, Geld für sich oder andere Personen auszugeben, auch wenn Sie genügend haben?",
+      "Sind Sie oft so sicher, recht zu haben, daß Ihnen ganz gleich ist, was andere Leute sagen?",
+      "Hat man Ihnen schon einmal gesagt, Sie seien eigensinnig oder stur?",
+      "Wenn jemand Sie um etwas bittet, das Sie eigentlich nicht tun wollen, sagen Sie zunächst zwar „ja“, arbeiten dann aber sehr langsam oder nachlässig?",
+      "Neigen Sie oft dazu, etwas, was Sie nicht tun wollen, einfach zu „vergessen“?",
+      "Haben Sie häufig den Eindruck, daß andere Sie nicht verstehen oder ihre Leistungen nicht ausreichend schätzen?",
+      "Sind Sie oft schlechter Laune und geraten dann leicht ins Streiten?",
+      "Haben Sie oft das Gefühl, daß die meisten Ihrer Vorgesetzten, Lehrer, Dozenten oder andere Leute in höheren Positionen eigentlich unfähig sind?",
+      "Erleben Sie es häufig als ungerecht, daß andere Menschen mehr besitzen als Sie?",
+      "Beschweren Sie sich oft darüber, daß Ihnen ausschließlich nur Schlechtes passiert?",
+      "Passiert es Ihnen oft, daß Sie erst jemanden vor den Kopf stoßen und dann alles tun, was der andere will, um es wiedergutzumachen?",
+      "Fühlen Sie sich in der Regel unglücklich oder ohne Lebensfreude?",
+      "Halten Sie sich im Grunde für minderwertig und haben Sie von sich selbst eine schlechte Meinung?",
+      "Machen Sie sich selbst oft schlecht?",
+      "Sind Sie jemand, der sich ständig Sorgen macht?",
+      "Verurteilen Sie andere häufig und haben schnell etwas an Ihnen auszusetzen?",
+      "Denken Sie, daß die meisten Menschen im Prinzip schlecht sind?",
+      "Befürchten Sie fast immer das Schlimmste?",
+      "Haben Sie oft Schuldgefühle, weil Sie etwas getan oder etwas unterlassen haben?",
+      "Müssen Sie ständig auf der Hut sein, um zu verhindern, daß andere Sie ausnutzen oder verletzen?",
+      "Zweifeln Sie oft daran, ob sie ihren Freunden oder Arbeitskollegen trauen können?",
+      "Glauben Sie, daß es besser ist, andere nicht zu viel über Sie wissen zu lassen?",
+      "Entdecken Sie häufig eine verborgene Bedeutung hinter dem, was andere sagen oder tun?",
+      "Sind Sie sehr nachtragend, d.h. dauert es lange, bis Sie jemandem verzeihen, der Sie beleidigt oder gekränkt hat?",
+      "Gibt es viele Leute, denen Sie nicht verzeihen können, auch wenn das, was diese gesagt oder getan haben, schon lange zurückliegt?",
+      "Werden Sie schnell wütend oder reagieren Sie aggressiv, wenn Sie kritisiert oder beleidigt werden?",
+      "Haben Sie schon öfter den Verdacht gehabt, Ihr Ehegatte oder Partner sei Ihnen untreu?",
+      "Wenn Sie in der Öffentlichkeit Leute sehen, die sich miteinander unterhalten, denken Sie dann häufig, daß man über Sie redet?",
+      "Haben Sie oft das Gefühl, daß Dinge, die augenscheinlich nichts miteinander zu tun haben, Ihnen eine besondere Botschaft vermitteln sollten?",
+      "Entdecken Sie häufig verborgene Botschaften hinter scheinbar zufälligen Ereignissen?",
+      "Hatten Sie jemals den Eindruck, daß Sie Dinge geschehen lassen können, einfach, indem Sie sich es wünschten oder daran denken?",
+      "Haben Sie persönliche Erfahrungen mit übernatürlichen Dingen?",
+      "Glauben Sie, einen „sechsten Sinn“ zu haben, so daß Sie - im Gegensatz zu anderen - Dinge im Voraus wissen und vorhersagen können?",
+      "Haben Sie schon öfter Gegenstände oder Schatten gesehen und gedacht, es seien in Wirklichkeit Menschen oder Tiere, oder haben Sie Geräusche für menschliche Stimmen gehalten?",
+      "Haben Sie manchmal das Gefühl, daß eine unsichtbare Person oder Kraft Sie umgibt, obwohl Sie niemanden sehen konnten?",
+      "Sehen Sie oft die Aura oder Energiefelder von anderen Menschen?",
+      "Gibt es außerhalb Ihrer Familie nur sehr wenige Menschen, zu denen Sie eine wirklich enge Beziehung haben?",
+      "Sind Sie oft nervös und ängstlich, wenn Sie mit anderen Menschen zusammen sind?",
+      "Könnten Sie ohne enge Beziehungen, wie man sie zum Beispiel in einer Familie oder mit Freunden hat, auskommen?",
+      "Würden Sie die meisten Dinge lieber allein als mit anderen zusammen machen?",
+      "Könnten Sie ohne sexuelle Beziehungen zufrieden sein?",
+      "Gibt es nur ganz wenige Dinge im Leben, die Ihnen wirklich Freude bereiten?",
+      "Ist es Ihnen gleichgültig, was andere über Sie denken?",
+      "Haben Sie das Gefühl, daß es nichts gibt, was Sie sehr glücklich oder sehr traurig machen kann?",
+      "Stehen Sie gern im Mittelpunkt?",
+      "Flirten Sie oft?",
+      "Kleiden Sie sich gern sexy, auch wenn Sie zum Beispiel nur zur Arbeit gehen oder Besorgungen machen?",
+      "Versuchen Sie, durch Ihre äußere Erscheinung, wie zum Beispiel Kleidung, die Aufmerksamkeit anderer auf sich zu ziehen?",
+      "Sehen Sie sich gern als schillernde Persönlichkeit?",
+      "Sind Sie oft unsicher in Ihren Meinungen und Ansichten und übernehmen daher die Meinung anderer?",
+      "Bekommen Sie zu fast allen Menschen, die Sie treffen, schnell engen Kontakt?",
+      "Haben Sie das Gefühl, daß die meisten Menschen Ihre besonderen Fähigkeiten gar nicht richtig schätzen?",
+      "Wurde Ihnen schon einmal gesagt, Sie hätten eine zu hohe Meinung von sich selbst?",
+      "Denken Sie oft an die Macht, den Ruhm oder die Anerkennung, die Sie eines Tages haben werden?",
+      "Denken Sie oft an die ideale Liebe, die Sie eines Tages finden werden?",
+      "Wenn Sie eine Beschwerde haben, bestehen Sie fast immer darauf, den höchsten Vorgesetzten zu sprechen?",
+      "Glauben Sie, daß es sich nur lohnt, Zeit mit Menschen zu verbringen, die etwas Besonderes oder besonders wichtig sind?",
+      "Ist es Ihnen sehr wichtig, daß andere Sie beachten oder Sie in irgendeiner Weise bewundern?",
+      "Glauben Sie, daß Sie sich bestimmten Regeln oder gesellschaftlichen Konventionen nicht unterordnen müssen, wenn diese Sie irgendwie einschränken?",
+      "Glauben Sie, daß es Gründe gibt, weswegen andere Leute Sie besonders zuvorkommend behandeln sollten?",
+      "Mußten Sie schon einmal andere regelrecht benutzen, um etwas zu erreichen?",
+      "Sind Ihnen Ihre eigenen Bedürfnisse oft wichtiger als die anderer?",
+      "Sind Sie oft der Meinung, daß andere Ihren Wünschen bedingungslos nachkommen sollten?",
+      "Halten Sie es oft für unwichtig, sich mit den Angelegenheiten oder Gefühlen anderer auseinanderzusetzen?",
+      "Können Sie es kaum ertragen, wenn andere erfolgreich sind?",
+      "Haben Sie den Eindruck, daß andere oft neidisch auf Sie sind?",
+      "Glauben Sie, daß nur sehr wenige Menschen Ihre Zeit und Ihre Aufmerksamkeit verdienen?",
+      "Geraten Sie aus der Fassung, wenn Sie sich vorstellen, daß jemand, der Ihnen viel bedeutet, Sie verläßt?",
+      "Sind Ihre Beziehungen zu Personen, an denen Ihnen viel liegt, von einem ständigen Auf und Ab gekennzeichnet?",
+      "Haben Sie schon die Erfahrung gemacht, daß sich Ihre Zielsetzungen und Ihr Gefühl, wer Sie sind, plötzlich ändern?",
+      "Erleben Sie häufig krasse Veränderungen dabei, wie Sie sich selbst sehen?",
+      "Ändern Sie oft plötzlich Ihre Zielsetzungen, Ihre beruflichen Pläne, religiöse Anschauungen und ähnliches?",
+      "Handeln Sie oft impulsiv?",
+      "Haben Sie je versucht, sich selbst zu verletzen oder umzubringen oder es angedroht?",
+      "Haben Sie sich je absichtlich geschnitten, verbrannt oder gekratzt?",
+      "Sind Sie launisch?",
+      "Fühlen Sie sich oft innerlich leer?",
+      "Haben Sie oft Wutausbrüche oder werden so böse, daß Sie die Kontrolle verlieren?",
+      "Schlagen Sie andere oder werfen Sie mit Gegenständen, wenn Sie wütend sind?",
+      "Können selbst Kleinigkeiten Sie sehr wütend machen?",
+      "Werden Sie anderen gegenüber argwöhnisch oder fühlen Sie sich manchmal unwirklich, wenn Sie unter großem Druck stehen?",
+      "...haben Sie andere Kinder schikaniert oder bedroht?",
+      "... haben Sie Schlägereien angefangen?",
+      "... haben Sie in einem Kampf eine Waffe benutzt, wie zum Beispiel einen Stock, einen Stein, eine zerbrochene Flasche, ein Messer oder einen Revolver?",
+      "... haben Sie jemals versucht, absichtlich anderen Schmerz oder Leid zuzufügen?",
+      "... haben Sie manchmal absichtlich Tiere gequält?",
+      "... haben Sie jemals einer anderen Person gewaltsam etwas weggenommen, indem Sie bedrohten, überfielen oder beraubten?",
+      "... haben Sie jemals einen anderen Menschen zu sexuellem Kontakt gezwungen?",
+      "... haben Sie schon einmal absichtlich Feuer gelegt?",
+      "... haben Sie vorsätzlich Dinge beschädigt, die nicht Ihnen gehörten?",
+      "... sind Sie irgendwo eingebrochen (z.B. Wohnung, Haus, Auto)?",
+      "... haben Sie häufig gelogen oder andere betrogen?",
+      "... haben Sie jemals etwas gestohlen, zum Beispiel in einem Kaufhaus?",
+      "... sind Sie jemals von zu Hause weggelaufen und über Nacht weggeblieben?",
+      "... sind Sie abends oft wesentlich später nach Hause gekommen als Sie durften?",
+      "... haben Sie oft die Schule geschwänzt?"
+    ]
+  }
+];
+
+var RU = {
+  asrs: {
+    title: "Чек-лист симптомов СДВГ для взрослых (ASRS-v1.1)",
+    instr: "Для каждого вопроса отметьте вариант, который лучше всего описывает, как вы чувствовали себя и вели себя за последние 6 месяцев.",
+    opts: ["Никогда", "Редко", "Иногда", "Часто", "Очень часто"],
+    sections: ["Часть A – скрининг", "Часть B – чек-лист симптомов"],
+    items: [
+      "Как часто у вас возникают трудности с завершением последних деталей проекта, после того как самые сложные части уже выполнены?",
+      "Как часто вам трудно привести вещи в порядок, когда задача требует организованности?",
+      "Как часто у вас возникают проблемы с тем, чтобы помнить о встречах или обязательствах?",
+      "Как часто вы избегаете или откладываете начало задачи, которая требует много размышлений?",
+      "Как часто вы ёрзаете или двигаете руками или ногами, когда долго приходится сидеть?",
+      "Как часто вы чувствуете себя чрезмерно активным и вынужденным что-то делать, будто вас приводит в движение мотор?",
+      "Как часто вы допускаете ошибки по невнимательности, когда приходится работать над скучным или сложным проектом?",
+      "Как часто вам трудно сохранять внимание, когда вы выполняете скучную или монотонную работу?",
+      "Как часто вам трудно сосредоточиться на том, что вам говорят, даже когда обращаются к вам напрямую?",
+      "Как часто вы теряете вещи дома или на работе или вам трудно их найти?",
+      "Как часто вас отвлекают действия или шумы вокруг?",
+      "Как часто вы покидаете своё место на совещаниях или в других ситуациях, где от вас ожидают, что вы будете сидеть?",
+      "Как часто вы чувствуете беспокойство или ёрзаете?",
+      "Как часто вам трудно отключиться и расслабиться, когда у вас есть время для себя?",
+      "Как часто вы слишком много говорите в компании?",
+      "Как часто в разговоре вы заканчиваете фразы собеседников, прежде чем они сами успевают их закончить?",
+      "Как часто вам трудно дождаться своей очереди?",
+      "Как часто вы перебиваете других людей, когда они работают или заняты другими делами?"
+    ]
+  },
+  adhs: {
+    title: "Шкала самооценки СДВГ (ADHS-SB)",
+    instr: "Ниже приведены вопросы о способности концентрироваться, потребности в движении и нервозности. Имеется в виду ваша обычная ситуация. Если формулировка к вам не подходит, отметьте «не подходит». Если вы считаете, что утверждение верно, укажите, какая степень выраженности (лёгкая / средняя / тяжёлая) лучше всего описывает вашу ситуацию. Отметьте подходящий вариант ответа. Пожалуйста, не пропускайте ни одного пункта.",
+    opts: ["Не подходит", "Лёгкая", "Средняя", "Тяжёлая"],
+    legend: ["Лёгкая степень (встречается изредка)", "Средняя степень (встречается часто)", "Тяжёлая степень (встречается почти всегда)"],
+    items: [
+      "Я невнимателен к деталям или допускаю ошибки по небрежности на работе.",
+      "Во время работы или других занятий (например, чтения, просмотра телевизора, игры) мне трудно сохранять концентрацию.",
+      "Я не слушаю как следует, когда мне что-то говорят.",
+      "Мне трудно выполнять задачи на рабочем месте так, как мне их объяснили.",
+      "Мне трудно организовывать проекты, планы или занятия.",
+      "Я предпочитаю избегать задач, требующих умственного напряжения. Мне не нравится такая работа, или я внутренне сопротивляюсь ей.",
+      "Я теряю важные вещи (например, ключи, кошелёк, инструменты).",
+      "Меня легко отвлечь во время занятий.",
+      "Я забываю о договорённостях, встречах или обратных звонках.",
+      "Я ёрзаю.",
+      "Мне трудно долго сидеть на месте.",
+      "Я чувствую внутреннее беспокойство.",
+      "Мне трудно заниматься чем-то тихо. Когда я что-то делаю, получается шумно.",
+      "Я постоянно в движении и чувствую себя так, будто меня приводит в действие мотор.",
+      "Мне трудно дождаться, пока другие договорят. Я перебиваю других.",
+      "Я нетерпелив и не могу дождаться своей очереди (например, в магазине).",
+      "Я перебиваю и отвлекаю других, когда они чем-то заняты.",
+      "Я много говорю, даже когда меня никто не хочет слушать.",
+      "Эти трудности у меня были уже в школьном возрасте.",
+      "Эти трудности повторяются у меня снова и снова, не только на работе, но и в других сферах жизни, например в семье, с друзьями и в свободное время.",
+      "Я страдаю от этих трудностей.",
+      "Из-за этих трудностей у меня уже были проблемы на работе и в общении с другими людьми."
+    ]
+  },
+  wurs: {
+    title: "Шкала Вендера-Юты, краткая версия (WURS-k)",
+    instr: "Этот тест позволяет оценить тяжесть симптомов СДВГ в детстве у взрослого человека. Поскольку СДВГ всегда начинается в детстве, для диагностики необходима ретроспективная оценка симптомов. Ниже приведён ряд утверждений об определённых формах поведения, особенностях и трудностях. Пожалуйста, читайте их по порядку и каждый раз решайте, было ли и насколько сильно это поведение, эта особенность или эта проблема выражены у вас в детстве, в возрасте примерно от 8 до 10 лет. Для ответа есть 5 вариантов. Отметьте подходящий вариант. Не пропускайте ни одного пункта, а в сомнительном случае выберите вариант, который подходит вам больше всего.",
+    opts: ["Не подходит", "Слабо выражено", "Умеренно", "Заметно", "Сильно"],
+    items: [
+      "у меня были проблемы с концентрацией, или меня легко было отвлечь.",
+      "я был(а) непоседливым(ой) и нервным(ой).",
+      "я был(а) невнимательным(ой) и мечтательным(ой).",
+      "я был(а) хорошо организован(а), опрятен(на) и аккуратен(на).",
+      "у меня были приступы гнева и эмоциональные срывы.",
+      "у меня была низкая выносливость, я бросал(а) дела, не доведя их до конца.",
+      "я был(а) грустным(ой), несчастным(ой) и подавленным(ой).",
+      "я был(а) непослушным(ой), бунтующим(ей) и дерзким(ой).",
+      "у меня была низкая самооценка.",
+      "меня было легко вывести из себя.",
+      "у меня были сильные перепады настроения, я был(а) капризным(ой).",
+      "я был(а) хорошим(ей) учеником(цей).",
+      "я часто сердился(лась) или бывал(а) раздражён(а).",
+      "у меня была хорошая моторная координация, и меня всегда выбирали в команду первым(ой).",
+      "у меня была склонность к незрелости.",
+      "я часто терял(а) самоконтроль.",
+      "у меня была склонность к неразумным поступкам.",
+      "у меня были проблемы с другими детьми и не было долгих дружб.",
+      "я боялся(лась) потерять самообладание.",
+      "я убегал(а) из дома.",
+      "я участвовал(а) в драках.",
+      "у меня были трудности с авторитетами, например неприятности в школе или вызовы к директору.",
+      "у меня были неприятности с полицией.",
+      "я в целом был(а) плохим(ой) учеником(цей) и учился(лась) медленно.",
+      "у меня были друзья, и я пользовался(лась) популярностью."
+    ].map(function (s) { return "В детстве, в возрасте 8–10 лет, " + s; })
+  },
+  phq: {
+    title: "PHQ-9",
+    instr: "Как часто за последние 2 недели вас беспокоили следующие проблемы?",
+    opts: ["Совсем нет", "В отдельные дни", "Более половины дней", "Почти каждый день"],
+    items: [
+      "Малый интерес или удовольствие от ваших занятий",
+      "Подавленность, уныние или безнадёжность",
+      "Трудности с засыпанием или со сном в течение ночи, либо повышенная сонливость",
+      "Усталость или ощущение нехватки энергии",
+      "Сниженный аппетит или чрезмерная потребность в еде",
+      "Плохое мнение о себе, чувство, что вы неудачник или подвели семью",
+      "Трудности с концентрацией, например при чтении газеты или просмотре телевизора",
+      "Были ли ваши движения или речь настолько замедлены, что это могли заметить другие? Или, наоборот, вы были «дёрганым» или беспокойным и двигались больше обычного?",
+      "Мысли о том, что вам лучше было бы умереть, или о том, чтобы причинить себе вред"
+    ]
+  },
+  skid: {
+    title: "Опросник SKID-II",
+    instr: "Следующие вопросы касаются вашей личности: ваших ощущений, чувств, установок и поведения в вашей прошлой жизни. Постарайтесь описать себя так, какой вы обычно. Ориентируйтесь на последние пять–десять лет. Отметьте подходящий вариант. Если вы не понимаете вопрос, пропустите его.",
+    opts: ["Нет", "Да"],
+    sections: [
+      "Следующие вопросы касаются форм поведения, которые могли проявляться до вашего 15-летия.",
+      "До 15 лет...",
+      "До 13 лет..."
+    ],
+    items: [
+      "Избегаете ли вы профессиональных задач или поручений, в которых приходится иметь дело с большим количеством людей?",
+      "Избегаете ли вы контактов с другими людьми, если только не уверены, что вы им действительно нравитесь?",
+      "Трудно ли вам быть открытым с другими людьми, даже если они вам близки?",
+      "Когда вы общаетесь с другими людьми, часто ли вы боитесь, что они будут вас критиковать или отвергнут?",
+      "Вы обычно сдержанны и молчаливы, когда знакомитесь с новыми людьми?",
+      "Считаете ли вы, что вы не так умны, не так ловки или не так привлекательны, как большинство других людей?",
+      "Боитесь ли вы пробовать что-то новое?",
+      "Часто ли вам нужны советы или подтверждение от других, прежде чем вы можете принять повседневные решения, например что надеть или что заказать в ресторане?",
+      "Зависите ли вы от других людей в организации важных сфер жизни, например финансовых дел, воспитания детей или планирования повседневной жизни?",
+      "Трудно ли вам возражать другим, даже если вы думаете, что они неправы?",
+      "Трудно ли вам начинать задачи или работать над ними, если вам никто не помогает?",
+      "Часто ли вы добровольно берётесь за неприятные задачи?",
+      "Чувствуете ли вы себя в целом неуютно, когда вы один?",
+      "Когда близкие отношения заканчиваются, нужен ли вам быстро другой человек, на которого можно положиться?",
+      "Часто ли вы думаете о том, что вас бросят и что у вас никого не будет, кто бы о вас заботился?",
+      "Вы из тех, кто придаёт большое значение деталям, порядку и организации, или любит составлять списки и графики?",
+      "Трудно ли вам доводить работу до конца, потому что вы тратите много времени на то, чтобы всё сделать точно и правильно?",
+      "Считаете ли вы сами или говорили ли вам другие, что вы так заняты работой (учёбой), что не остаётся времени на друзей или развлечения?",
+      "Есть ли у вас очень высокие моральные требования?",
+      "Трудно ли вам выбрасывать вещи, потому что вы думаете, что они когда-нибудь могут пригодиться?",
+      "Трудно ли вам принимать помощь от других, если они делают дело не совсем так, как вы себе представляете?",
+      "Трудно ли вам тратить деньги на себя или других, даже если у вас их достаточно?",
+      "Бываете ли вы так уверены в своей правоте, что вам всё равно, что говорят другие?",
+      "Говорили ли вам когда-нибудь, что вы упрямы?",
+      "Если кто-то просит вас о том, чего вы на самом деле не хотите делать, вы сначала соглашаетесь («да»), но потом работаете очень медленно или небрежно?",
+      "Часто ли вы склонны «забывать» то, чего не хотите делать?",
+      "Часто ли у вас складывается впечатление, что другие вас не понимают или недостаточно ценят ваши достижения?",
+      "Часто ли вы бываете в плохом настроении и тогда легко начинаете спорить?",
+      "Часто ли у вас ощущение, что большинство ваших начальников, учителей, преподавателей или других людей на высоких должностях на самом деле некомпетентны?",
+      "Часто ли вы воспринимаете как несправедливое, что у других людей больше, чем у вас?",
+      "Часто ли вы жалуетесь, что с вами случается только плохое?",
+      "Часто ли бывает, что вы сначала обижаете человека, а потом делаете всё, что он хочет, чтобы это загладить?",
+      "Чувствуете ли вы себя, как правило, несчастным или без радости жизни?",
+      "Считаете ли вы себя в глубине души неполноценным и плохо о себе думаете?",
+      "Часто ли вы унижаете себя?",
+      "Вы из тех, кто постоянно беспокоится?",
+      "Часто ли вы осуждаете других и быстро находите, к чему придраться?",
+      "Думаете ли вы, что большинство людей в основе своей плохие?",
+      "Боитесь ли вы почти всегда худшего?",
+      "Часто ли вас мучает чувство вины из-за того, что вы что-то сделали или чего-то не сделали?",
+      "Приходится ли вам постоянно быть начеку, чтобы другие вас не использовали и не обидели?",
+      "Часто ли вы сомневаетесь, можно ли доверять своим друзьям или коллегам?",
+      "Считаете ли вы, что лучше не рассказывать о себе другим слишком много?",
+      "Часто ли вы находите скрытый смысл в том, что другие говорят или делают?",
+      "Вы очень злопамятны, то есть вам нужно много времени, чтобы простить того, кто вас оскорбил или обидел?",
+      "Есть ли много людей, которых вы не можете простить, даже если то, что они сказали или сделали, было давно?",
+      "Быстро ли вы злитесь или реагируете агрессивно, когда вас критикуют или оскорбляют?",
+      "Бывало ли у вас не раз подозрение, что ваш супруг или партнёр вам неверен?",
+      "Когда вы видите на улице людей, которые разговаривают друг с другом, часто ли вы думаете, что говорят о вас?",
+      "Часто ли у вас чувство, что вещи, которые на первый взгляд никак не связаны, должны передать вам особое сообщение?",
+      "Часто ли вы обнаруживаете скрытые послания за якобы случайными событиями?",
+      "Было ли у вас когда-нибудь ощущение, что вы можете заставить события произойти, просто желая этого или думая об этом?",
+      "Есть ли у вас личный опыт со сверхъестественными вещами?",
+      "Считаете ли вы, что у вас есть «шестое чувство», так что вы, в отличие от других, можете знать и предсказывать вещи заранее?",
+      "Бывало ли у вас не раз, что вы видели предметы или тени и думали, что это на самом деле люди или животные, или принимали звуки за человеческие голоса?",
+      "Бывает ли у вас иногда ощущение, что вас окружает невидимый человек или сила, хотя вы никого не видели?",
+      "Часто ли вы видите ауру или энергетические поля других людей?",
+      "Есть ли за пределами вашей семьи только очень мало людей, с которыми у вас действительно близкие отношения?",
+      "Часто ли вы нервничаете и испытываете страх, когда находитесь с другими людьми?",
+      "Смогли бы вы обойтись без близких отношений, какие бывают, например, в семье или с друзьями?",
+      "Предпочли бы вы делать большинство дел в одиночку, а не с другими?",
+      "Могли бы вы быть довольны без сексуальных отношений?",
+      "Есть ли в жизни лишь очень немногое, что действительно приносит вам радость?",
+      "Безразлично ли вам, что другие думают о вас?",
+      "Есть ли у вас чувство, что нет ничего, что могло бы сделать вас очень счастливым или очень грустным?",
+      "Любите ли вы быть в центре внимания?",
+      "Часто ли вы флиртуете?",
+      "Любите ли вы одеваться сексуально, даже если идёте, например, просто на работу или по делам?",
+      "Пытаетесь ли вы своей внешностью, например одеждой, привлекать к себе внимание других?",
+      "Любите ли вы видеть себя яркой личностью?",
+      "Часто ли вы не уверены в своих мнениях и взглядах и поэтому перенимаете мнение других?",
+      "Быстро ли вы завязываете тесный контакт почти со всеми людьми, которых встречаете?",
+      "Есть ли у вас чувство, что большинство людей не ценят по-настоящему ваши особые способности?",
+      "Говорили ли вам когда-нибудь, что вы слишком высокого мнения о себе?",
+      "Часто ли вы думаете о власти, славе или признании, которые когда-нибудь получите?",
+      "Часто ли вы думаете об идеальной любви, которую когда-нибудь найдёте?",
+      "Если у вас есть жалоба, вы почти всегда настаиваете на разговоре с самым высоким начальником?",
+      "Считаете ли вы, что стоит проводить время только с людьми, которые особенные или особенно важные?",
+      "Очень ли вам важно, чтобы другие обращали на вас внимание или как-то восхищались вами?",
+      "Считаете ли вы, что вам не нужно подчиняться определённым правилам или общественным условностям, если они вас чем-то ограничивают?",
+      "Считаете ли вы, что есть причины, по которым другие люди должны относиться к вам особенно предупредительно?",
+      "Приходилось ли вам когда-нибудь буквально использовать других, чтобы чего-то добиться?",
+      "Часто ли ваши собственные потребности важнее потребностей других?",
+      "Часто ли вы считаете, что другие должны безоговорочно выполнять ваши желания?",
+      "Часто ли вы считаете неважным вникать в дела или чувства других?",
+      "С трудом ли вы выносите, когда другие успешны?",
+      "Есть ли у вас впечатление, что другие часто завидуют вам?",
+      "Считаете ли вы, что лишь очень немногие люди заслуживают вашего времени и внимания?",
+      "Выходите ли вы из равновесия, когда представляете, что близкий вам человек вас оставит?",
+      "Характеризуются ли ваши отношения с людьми, которые вам очень дороги, постоянными взлётами и падениями?",
+      "Бывало ли у вас так, что ваши цели и ваше ощущение того, кто вы есть, внезапно менялись?",
+      "Часто ли вы переживаете резкие перемены в том, как вы видите себя?",
+      "Часто ли вы внезапно меняете свои цели, профессиональные планы, религиозные взгляды и тому подобное?",
+      "Часто ли вы действуете импульсивно?",
+      "Пытались ли вы когда-нибудь причинить себе вред или покончить с собой, или угрожали этим?",
+      "Наносили ли вы себе когда-нибудь намеренно порезы, ожоги или царапины?",
+      "Вы капризны, склонны к перепадам настроения?",
+      "Чувствуете ли вы себя часто внутренне опустошённым?",
+      "Часто ли у вас бывают приступы гнева, или вы злитесь так, что теряете контроль?",
+      "Бьёте ли вы других или бросаете в них предметы, когда злитесь?",
+      "Могут ли даже мелочи сильно вас разозлить?",
+      "Становитесь ли вы подозрительным по отношению к другим или чувствуете ли иногда нереальность происходящего, когда находитесь под сильным давлением?",
+      "...издевались ли вы над другими детьми или угрожали им?",
+      "... затевали ли вы драки?",
+      "... использовали ли вы в драке оружие, например палку, камень, разбитую бутылку, нож или револьвер?",
+      "... пытались ли вы когда-нибудь намеренно причинить другим боль или страдание?",
+      "... мучили ли вы иногда намеренно животных?",
+      "... отнимали ли вы когда-нибудь у другого человека что-либо силой, угрожая, нападая или грабя?",
+      "... принуждали ли вы когда-нибудь другого человека к сексуальному контакту?",
+      "... поджигали ли вы когда-нибудь что-либо намеренно?",
+      "... умышленно портили ли вы вещи, которые вам не принадлежали?",
+      "... проникали ли вы куда-нибудь со взломом (например, в квартиру, дом, автомобиль)?",
+      "... часто ли вы лгали или обманывали других?",
+      "... крали ли вы когда-нибудь что-либо, например в универмаге?",
+      "... убегали ли вы когда-нибудь из дома и оставались вне дома на ночь?",
+      "... возвращались ли вы вечером домой значительно позже, чем вам разрешали?",
+      "... часто ли вы прогуливали школу?"
+    ]
+  }
+};
+
+var KEY = "uke-fragebogen-v1";
+var S = { meta: { name: "", dob: "", date: "", age: "", sex: "" }, a: { asrs: {}, adhs: {}, wurs: {}, phq: {}, skid: {} }, tab: "asrs", lang: "de" };
+try {
+  var saved = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (saved) {
+    for (var k in saved.meta || {}) S.meta[k] = saved.meta[k];
+    for (var id in saved.a || {}) S.a[id] = saved.a[id];
+    if (saved.tab) S.tab = saved.tab;
+    if (saved.lang === "ru" || saved.lang === "de") S.lang = saved.lang;
+  }
+} catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+function h(tag, attrs, kids) {
+  var e = document.createElement(tag);
+  for (var k in attrs || {}) {
+    if (k === "class") e.className = attrs[k];
+    else if (k === "text") e.textContent = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  (kids || []).forEach(function (c) { e.appendChild(c); });
+  return e;
+}
+function byId(id) { return TESTS.filter(function (t) { return t.id === id; })[0]; }
+function answered(t) { return Object.keys(S.a[t.id]).length; }
+function optLabel(t, v) {
+  var o = t.opts.filter(function (x) { return x.v === v; })[0];
+  return o ? (o.f || o.t) : "";
+}
+
+/* ---------- tabs ---------- */
+var tabsEl = document.getElementById("tabs");
+function buildTabs() {
+  tabsEl.textContent = "";
+  TESTS.forEach(function (t) {
+    var n = answered(t), total = t.items.length;
+    var b = h("button", { class: "tab" + (n === total ? " done" : ""), role: "tab", type: "button", "data-id": t.id, "aria-selected": String(t.id === S.tab) }, [
+      h("span", { text: t.tab }),
+      h("small", { text: n + " / " + total })
+    ]);
+    tabsEl.appendChild(b);
+  });
+}
+tabsEl.addEventListener("click", function (e) {
+  var b = e.target.closest(".tab");
+  if (!b) return;
+  S.tab = b.getAttribute("data-id");
+  save(); buildTabs(); buildPanel(); updateResult();
+  restoreScroll();
+});
+
+/* ---------- panel ---------- */
+var panel = document.getElementById("panel");
+function buildPanel() {
+  var t = byId(S.tab);
+  var ru = S.lang === "ru" ? RU[t.id] : null;
+  panel.textContent = "";
+  panel.appendChild(h("h2", { text: ru ? ru.title : t.title }));
+  panel.appendChild(h("p", { class: "muted", text: ru ? ru.instr : t.instr }));
+  if (t.hint) panel.appendChild(h("p", { class: "hint", text: t.hint }));
+  var legend = ru ? ru.legend : t.legend;
+  if (legend) {
+    panel.appendChild(h("div", { class: "legend" }, legend.map(function (x) { return h("span", { text: x }); })));
+  }
+  if (t.extra) {
+    var age = h("input", { type: "number", id: "age", min: "0", max: "120", inputmode: "numeric" });
+    age.value = S.meta.age || "";
+    var sex = h("select", { id: "sex" }, [
+      h("option", { value: "", text: "—" }),
+      h("option", { value: "männlich", text: "männlich" }),
+      h("option", { value: "weiblich", text: "weiblich" })
+    ]);
+    sex.value = S.meta.sex || "";
+    var fields = h("div", { class: "fields two" }, [
+      h("label", { class: "f", "for": "age" }, [h("span", { text: "Alter" }), age]),
+      h("label", { class: "f", "for": "sex" }, [h("span", { text: "Geschlecht" }), sex])
+    ]);
+    panel.appendChild(fields);
+    age.addEventListener("input", function () { S.meta.age = age.value; save(); updateResult(); });
+    sex.addEventListener("change", function () { S.meta.sex = sex.value; save(); updateResult(); });
+  }
+  var qs = h("div", { class: "qs" });
+  t.items.forEach(function (txt, i) {
+    t.sections.forEach(function (s, si) { if (s.at === i) qs.appendChild(h("p", { class: "sec" + (s.plain ? " plain" : ""), text: ru ? ru.sections[si] : s.t })); });
+    txt = ru ? ru.items[i] : txt;
+    var tid = t.id + "-t" + i;
+    var q = h("div", { class: "q" + (t.yn ? " inline" : ""), role: "radiogroup", "aria-labelledby": tid }, [
+      h("div", { class: "qtext" }, [h("span", { class: "qn", text: String(i + 1) }), h("span", { id: tid, text: txt })])
+    ]);
+    var opts = h("div", { class: "opts" + (t.long ? " long" : "") + (t.yn ? " yn" : "") });
+    opts.style.setProperty("--cols", t.opts.length);
+    t.opts.forEach(function (o, oi) {
+      var inp = h("input", { type: "radio", name: t.id + "-" + i, value: String(o.v) });
+      if (S.a[t.id][i] === o.v) inp.checked = true;
+      var lbl = ru ? ru.opts[oi] : o.t;
+      var sp = h("span", {}, t.yn ? [document.createTextNode(lbl)] : [h("em", { text: String(o.v) }), document.createTextNode(lbl)]);
+      opts.appendChild(h("label", { class: "opt" }, [inp, sp]));
+    });
+    var starTip = ru ? "Не определился(лась)" : "Unentschieden";
+    var starIn = h("input", { type: "radio", name: t.id + "-" + i, value: "-1", "aria-label": starTip });
+    if (S.a[t.id][i] === -1) starIn.checked = true;
+    var star = h("label", { class: "star", title: starTip }, [starIn, h("span", { text: "*" })]);
+    q.appendChild(h("div", { class: "ans" }, [opts, star]));
+    qs.appendChild(q);
+  });
+  panel.appendChild(qs);
+}
+panel.addEventListener("change", function (e) {
+  var m = /^([a-z]+)-(\d+)$/.exec(e.target.name || "");
+  if (!m) return;
+  S.a[m[1]][+m[2]] = +e.target.value;
+  save(); buildTabs(); updateResult();
+});
+
+/* ---------- result + export ---------- */
+function metaText(t) {
+  var l = ["Vorname, Name: " + (S.meta.name || "—"), "Geburtsdatum: " + (S.meta.dob || "—"), "Datum: " + (S.meta.date || "—")];
+  if (t && t.extra) { l.push("Alter: " + (S.meta.age || "—")); l.push("Geschlecht: " + (S.meta.sex || "—")); }
+  return l.join("\n");
+}
+function sums(t) {
+  return t.groups.map(function (g) {
+    var s = 0, d = 0, u = 0;
+    for (var i = g.from; i < g.to; i++) {
+      var v = S.a[t.id][i];
+      if (v === undefined) continue;
+      d++;
+      if (v < 0) u++; else s += v;
+    }
+    return { g: g, sum: s, done: d, und: u };
+  });
+}
+function bodyText(t) {
+  var l = [t.title];
+  t.items.forEach(function (_, i) {
+    var v = S.a[t.id][i];
+    l.push((i + 1) + ": " + (v === undefined ? "—" : v < 0 ? "* (unentschieden)" : (t.yn ? t.opts[v].t : v + " (" + optLabel(t, v) + ")")));
+  });
+  l.push("");
+  var rs = sums(t), und = 0;
+  rs.forEach(function (r) { und += r.und; l.push(r.g.name + ": " + r.sum + " / " + r.g.max); });
+  if (und > 0) l.push("* = unentschieden, nicht in der Summe gewertet (" + und + ")");
+  return l.join("\n");
+}
+function textThis() { var t = byId(S.tab); return metaText(t) + "\n\n" + bodyText(t); }
+function textAll() { return metaText(null) + "\n\n" + TESTS.map(function (t) { return bodyText(t) + (t.extra ? "\n" + "Alter: " + (S.meta.age || "—") + ", Geschlecht: " + (S.meta.sex || "—") : ""); }).join("\n\n――――――――\n\n"); }
+
+var resultEl = document.getElementById("result");
+var out, actionsEl;
+
+/* ---------- PDF (always German, same text as the printed forms) ---------- */
+function pdfSafe(s) { return String(s).replace(/[„“”]/g, '"').replace(/[–—]/g, "-"); }
+function makePdf(list) {
+  var jsPDF = window.jspdf && window.jspdf.jsPDF;
+  if (!jsPDF) return null;
+  var doc = new jsPDF({ unit: "mm", format: "a4" });
+  var M = 18, W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), LH = 5, y = M;
+  function need(n) { if (y + n > H - M) { doc.addPage(); y = M; } }
+  function line(txt, size, bold, indent) {
+    doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(size);
+    var parts = doc.splitTextToSize(pdfSafe(txt), W - 2 * M - (indent || 0));
+    need(parts.length * LH);
+    parts.forEach(function (p) { doc.text(p, M + (indent || 0), y); y += LH; });
+  }
+  line("UKE Hamburg - Spezialambulanz für AD(H)S im Erwachsenenalter", 9, false); y += 2;
+  line("Vorname, Name: " + (S.meta.name || "-"), 10, false);
+  line("Geburtsdatum: " + (S.meta.dob || "-"), 10, false);
+  line("Datum: " + (S.meta.date || "-"), 10, false);
+  list.forEach(function (t, ti) {
+    if (ti > 0) { doc.addPage(); y = M; } else { y += 4; }
+    line(t.title, 14, true); y += 1;
+    if (t.extra) { line("Alter: " + (S.meta.age || "-") + "    Geschlecht: " + (S.meta.sex || "-"), 10, false); }
+    y += 2;
+    t.items.forEach(function (txt, i) {
+      t.sections.forEach(function (s) { if (s.at === i) { y += 2; line(s.t, 11, true); y += 1; } });
+      var v = S.a[t.id][i];
+      var ans = v === undefined ? "-" : v < 0 ? "* (unentschieden)" : (t.yn ? t.opts[v].t : v + " - " + optLabel(t, v));
+      var parts = doc.splitTextToSize(pdfSafe(txt), W - 2 * M - 10);
+      need(parts.length * LH + LH + 2);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      doc.text(String(i + 1) + ".", M, y);
+      parts.forEach(function (p) { doc.text(p, M + 10, y); y += LH; });
+      doc.setFont("helvetica", "bold");
+      doc.text("Antwort: " + pdfSafe(ans), M + 10, y); y += LH + 2;
+    });
+    y += 2;
+    var pund = 0;
+    sums(t).forEach(function (r) { pund += r.und; line(r.g.name + ": " + r.sum + " / " + r.g.max, 10, true); });
+    if (pund > 0) line("* = unentschieden, nicht in der Summe gewertet (" + pund + ")", 9, false);
+  });
+  return doc.output("blob");
+}
+function addPdfButtons() {
+  var note = document.getElementById("pdfnote");
+  function mk(label, getList, fname) {
+    var b = h("button", { class: "btn", type: "button", text: label });
+    b.addEventListener("click", function () {
+      var blob = makePdf(getList());
+      if (!blob) { note.textContent = "Не удалось собрать PDF: библиотека не загрузилась."; return; }
+      var a = h("a", { href: URL.createObjectURL(blob), download: fname });
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+      note.textContent = "PDF скачан.";
+    });
+    actionsEl.insertBefore(b, actionsEl.firstChild);
+  }
+  mk("PDF: все тесты", function () { return TESTS; }, "UKE-Fragebogen-alle.pdf");
+  mk("PDF: этот тест", function () { return [byId(S.tab)]; }, "UKE-Fragebogen.pdf");
+}
+function buildResult() {
+  resultEl.textContent = "";
+  resultEl.appendChild(h("h2", { text: "Итог" }));
+  resultEl.appendChild(h("div", { class: "rows", id: "rows" }));
+  resultEl.appendChild(h("div", { id: "flag" }));
+  resultEl.appendChild(h("p", { class: "note", text: "Это только сумма баллов, не диагноз. Оценку проводит врач." }));
+  resultEl.appendChild(h("label", { class: "f", "for": "out", style: "margin-top:14px", text: "Готовый текст для отправки (можно выделить и скопировать вручную)" }));
+  out = h("textarea", { id: "out", readonly: "", rows: "10" });
+  resultEl.appendChild(out);
+  var bThis = h("button", { class: "btn", type: "button", id: "copyThis", text: "Скопировать этот тест" });
+  var bAll = h("button", { class: "btn ghost", type: "button", id: "copyAll", text: "Скопировать все тесты" });
+  var bReset = h("button", { class: "btn ghost", type: "button", id: "reset", text: "Очистить этот тест" });
+  actionsEl = h("div", { class: "actions" }, [bThis, bAll, bReset]);
+  resultEl.appendChild(actionsEl);
+  resultEl.appendChild(h("p", { class: "note", id: "pdfnote", text: "" }));
+  function doCopy(btn, label, getText) {
+    btn.addEventListener("click", function () {
+      var text = getText();
+      function done(m) { btn.textContent = m; setTimeout(function () { btn.textContent = label; }, 1800); }
+      function fallback() { out.value = text; out.focus(); out.select(); done("Выделено, скопируйте вручную"); }
+      try { navigator.clipboard.writeText(text).then(function () { done("Скопировано"); }, fallback); }
+      catch (e) { fallback(); }
+    });
+  }
+  doCopy(bThis, "Скопировать этот тест", textThis);
+  doCopy(bAll, "Скопировать все тесты", textAll);
+  bReset.addEventListener("click", function () {
+    S.a[S.tab] = {};
+    save(); buildTabs(); buildPanel(); updateResult();
+  });
+}
+function updateResult() {
+  var t = byId(S.tab);
+  var rows = document.getElementById("rows");
+  rows.textContent = "";
+  sums(t).forEach(function (r) {
+    var total = r.g.to - r.g.from;
+    rows.appendChild(h("div", { class: "rrow" }, [
+      h("div", {}, [document.createTextNode(r.g.name), h("small", { text: "заполнено " + r.done + " из " + total + (r.und ? ", из них «*»: " + r.und : "") })]),
+      h("div", { class: "score" }, [document.createTextNode(String(r.sum)), h("small", { text: " / " + r.g.max })])
+    ]));
+  });
+  var flag = document.getElementById("flag");
+  flag.textContent = "";
+  flag.className = "";
+  if (t.flag && S.a[t.id][t.flag.i] > 0) {
+    flag.className = "flag";
+    flag.textContent = t.flag.text;
+  }
+  out.value = textThis();
+}
+
+/* ---------- header fields ---------- */
+["name", "dob", "date"].forEach(function (id) {
+  var el = document.getElementById(id);
+  el.value = S.meta[id] || "";
+  el.addEventListener("input", function () { S.meta[id] = el.value; save(); updateResult(); });
+});
+
+function syncLang() {
+  var bs = document.querySelectorAll(".langbtn");
+  for (var i = 0; i < bs.length; i++) bs[i].setAttribute("aria-pressed", String(bs[i].getAttribute("data-l") === S.lang));
+  document.documentElement.setAttribute("lang", S.lang);
+}
+document.querySelector(".lang").addEventListener("click", function (e) {
+  var b = e.target.closest(".langbtn");
+  if (!b) return;
+  S.lang = b.getAttribute("data-l");
+  save(); syncLang(); buildPanel();
+});
+
+if (!byId(S.tab)) S.tab = "asrs";
+syncLang();
+buildTabs(); buildPanel(); buildResult(); updateResult();
+addPdfButtons();
+
+/* ---------- resume where you stopped: remember scroll per tab ---------- */
+var SCROLL_KEY = KEY + "-scroll";
+var scrolls = {};
+try { scrolls = JSON.parse(localStorage.getItem(SCROLL_KEY) || "{}") || {}; } catch (e) {}
+var scrollTimer;
+window.addEventListener("scroll", function () {
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(function () {
+    scrolls[S.tab] = window.scrollY;
+    try { localStorage.setItem(SCROLL_KEY, JSON.stringify(scrolls)); } catch (e) {}
+  }, 200);
+}, { passive: true });
+function restoreScroll() { requestAnimationFrame(function () { window.scrollTo({ top: scrolls[S.tab] || 0 }); }); }
+window.addEventListener("load", restoreScroll);
+</script>
+
+</body></html>

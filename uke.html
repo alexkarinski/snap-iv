@@ -170,7 +170,8 @@ var TESTS = [
     id: "asrs", tab: "ASRS-v1.1",
     title: "Symptomcheckliste für Erwachsene mit ADHS (ASRS-v1.1)",
     instr: "Kreuzen Sie als Antwort auf jede Frage das Kästchen an, das am besten beschreibt, wie Sie sich in den letzten 6 Monaten gefühlt und verhalten haben.",
-    hint: "Период: последние 6 месяцев.",
+    hint: "Zeitraum: die letzten 6 Monate.",
+    hintRu: "Период: последние 6 месяцев.",
     opts: [{v:0,t:"Nie"},{v:1,t:"Selten"},{v:2,t:"Manchmal"},{v:3,t:"Oft"},{v:4,t:"Sehr oft"}],
     sections: [{at:0,t:"Teil A - Screener"},{at:6,t:"Teil B - Symptomcheckliste"}],
     groups: [{from:0,to:6,name:"Teil A (1–6)",max:24},{from:6,to:18,name:"Teil B (7–18)",max:48}],
@@ -199,7 +200,8 @@ var TESTS = [
     id: "adhs", tab: "ADHS-SB",
     title: "ADHS Selbstbeurteilungsskala (ADHS-SB)",
     instr: "Nachfolgend finden Sie einige Fragen über Konzentrationsvermögen, Bewegungsbedürfnis und Nervosität. Gemeint ist damit Ihre Situation, wie sie sich gewöhnlich darstellt. Wenn die Formulierungen auf Sie nicht zutreffen, kreuzen Sie bitte „nicht zutreffend“ an. Wenn Sie der Meinung sind, dass die Aussagen richtig sind, geben Sie bitte an, welche Ausprägung – leicht/mittel/schwer – Ihre Situation am besten beschreibt. Bitte kreuzen Sie die entsprechende Antwortalternative an. Lassen Sie bitte keinen Punkt aus.",
-    hint: "Если утверждение к вам не подходит, отметьте 0. Не пропускайте пункты.",
+    hint: "Wenn eine Aussage nicht auf Sie zutrifft, kreuzen Sie 0 an. Bitte keine Frage auslassen.",
+    hintRu: "Если утверждение к вам не подходит, отметьте 0. Не пропускайте пункты.",
     opts: [
       {v:0,t:"Trifft nicht zu",f:"Trifft nicht zu"},
       {v:1,t:"Leicht",f:"Leicht ausgeprägt (kommt gelegentlich vor)"},
@@ -238,7 +240,8 @@ var TESTS = [
     id: "wurs", tab: "WURS-k",
     title: "Wender-Utah-Rating Skala – Kurzversion (WURS-k)",
     instr: "Dieser Test ermöglicht es, den Schweregrad der ADHS-Symptomatik in der Kindheit eines Erwachsenen einzuschätzen. Da ADHS immer in der Kindheit beginnt, ist zur diagnostischen Abklärung die retrospektive Erfassung von Krankheitssymptomen zwingend erforderlich. Im Folgenden finden Sie eine Reihe von Aussagen über bestimmte Verhaltensweisen, Eigenschaften und Schwierigkeiten. Bitte lesen Sie diese der Reihe nach durch und entscheiden Sie jeweils, ob und wie stark diese Verhaltensweise, diese Eigenschaft oder dieses Problem bei Ihnen als Kind im Alter von ca. 8 bis 10 Jahren ausgeprägt war. Dabei stehen Ihnen 5 verschiedene Antwortalternativen zur Verfügung. Bitte kreuzen Sie die entsprechende Antwortalternative an. Lassen Sie bitte keinen Punkt aus und wählen Sie im Zweifelsfall die Antwortmöglichkeit, die noch am ehesten für Sie zutrifft.",
-    hint: "Период: детство, примерно 8–10 лет. Не пропускайте пункты.",
+    hint: "Zeitraum: Kindheit, etwa im Alter von 8–10 Jahren. Bitte keine Frage auslassen.",
+    hintRu: "Период: детство, примерно 8–10 лет. Не пропускайте пункты.",
     opts: [
       {v:0,t:"Trifft nicht zu",f:"Trifft nicht zu"},
       {v:1,t:"Gering",f:"Gering ausgeprägt"},
@@ -280,7 +283,8 @@ var TESTS = [
     id: "phq", tab: "PHQ-9",
     title: "PHQ-9",
     instr: "Wie oft fühlten Sie sich im Verlauf der letzten 2 Wochen durch die folgenden Beschwerden beeinträchtigt?",
-    hint: "Период: последние 2 недели.",
+    hint: "Zeitraum: die letzten 2 Wochen.",
+    hintRu: "Период: последние 2 недели.",
     long: true,
     opts: [
       {v:0,t:"Überhaupt nicht"},
@@ -307,7 +311,8 @@ var TESTS = [
     id: "skid", tab: "SKID-II",
     title: "SKID-II – Fragebogen",
     instr: "Die folgenden Fragen beziehen sich auf Ihre Persönlichkeit, also auf Ihre Empfindungen, Gefühle, Einstellungen und Verhaltensweisen in Ihrem bisherigen Leben. Bitte versuchen Sie, sich so zu beschreiben, wie Sie im allgemeinen sind. Beziehen Sie sich dabei auf die letzten fünf bis zehn Jahre. Kreuzen Sie bitte das Zutreffende an. Wenn Sie eine Frage nicht verstehen, lassen Sie diese bitte aus.",
-    hint: "Отвечайте, как вы обычно себя ведёте, ориентируясь на последние 5–10 лет. Если вопрос непонятен, пропустите его.",
+    hint: "Antworten Sie so, wie Sie sich gewöhnlich verhalten, bezogen auf die letzten 5–10 Jahre. Wenn Sie eine Frage nicht verstehen, lassen Sie sie aus.",
+    hintRu: "Отвечайте, как вы обычно себя ведёте, ориентируясь на последние 5–10 лет. Если вопрос непонятен, пропустите его.",
     yn: true,
     extra: true,
     opts: [{v:0,t:"Nein"},{v:1,t:"Ja"}],
@@ -734,7 +739,8 @@ function buildPanel() {
   panel.textContent = "";
   panel.appendChild(h("h2", { text: ru ? ru.title : t.title }));
   panel.appendChild(h("p", { class: "muted", text: ru ? ru.instr : t.instr }));
-  if (t.hint) panel.appendChild(h("p", { class: "hint", text: t.hint }));
+  var hint = ru ? t.hintRu : t.hint;
+  if (hint) panel.appendChild(h("p", { class: "hint", text: hint }));
   var legend = ru ? ru.legend : t.legend;
   if (legend) {
     panel.appendChild(h("div", { class: "legend" }, legend.map(function (x) { return h("span", { text: x }); })));
